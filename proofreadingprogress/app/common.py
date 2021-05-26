@@ -1,4 +1,3 @@
-from proofreadertraining.NGCompareState import ComparisonState
 from flask import request, make_response, g
 from flask import current_app, send_from_directory
 import json
@@ -6,10 +5,6 @@ import time
 import requests
 import os
 import pandas as pd
-import urllib
-from proofreadertraining.score_comparison import get_root_ids
-
-from proofreadertraining import __version__
 
 
 __api_versions__ = [0]
@@ -20,12 +15,6 @@ auth_token = auth_token_json["token"]
 # -------------------------------
 # ------ Access control and index
 # -------------------------------
-
-def index():
-    return send_from_directory('.', 'index.html')
-
-def simple():
-    return send_from_directory('.', 'simple.html')
 
 def query():
     return send_from_directory('.', 'query.html')
@@ -122,31 +111,3 @@ def apiRequest(args):
         'csv': csv
     }
     return content
-
-def get_state_link(req):
-    return get_compare(req).renderURL()
-
-
-def get_json_link(req):
-    base = req.get("ng_url")
-    return get_compare(req).renderShortJSON(base)
-
-def get_compare(req): 
-    pro_ids = req.get("production", '').split()
-    tst_ids = req.get("test", '').split()
-    raw_config = req.get("config", '{}')
-    config = json.loads(urllib.parse.unquote(raw_config))
-    return ComparisonState(pro_root_ids=pro_ids, tst_root_ids=tst_ids, options=config)
-
-def get_rootids(req):
-    coords = [int(nstr) for nstr in req.get("co", "0 0 0").split()]
-    protime = req.get("prt")
-    tsttime = req.get("tst")
-    mode = req.get("json", "full")
-    root_ids = get_root_ids(coords, protime, tsttime)
-    compare = ComparisonState([root_ids[0]], [root_ids[1]])
-    if (mode == 'full'):
-        return compare.renderURL()
-    else:
-        base = req.get("ng_url")
-        return compare.renderShortJSON(base)

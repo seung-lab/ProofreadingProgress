@@ -2,7 +2,7 @@ import sys
 from werkzeug.serving import WSGIRequestHandler
 import os
 
-from proofreaderprogress.app import create_app
+from proofreadingprogress.app import create_app
 
 app = create_app()
 
