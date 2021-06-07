@@ -37,7 +37,8 @@ const app = new Vue({
               this.multiqueryRaw.length) &&
           !this.loading;
     }
-  }, mounted() {
+  },
+  mounted() {
     this.$nextTick(function() {
       // Code that will run only after the
       // entire view has been rendered
@@ -59,10 +60,12 @@ const app = new Vue({
       this.processMQR();
 
       const request = new URL(`${base}/qry/`);
-      request.searchParams.set(
-          'query',
-          this.multiquery.length ? this.multiquery.join(' ') :
-                                   this.query.root_id);
+      if (this.multiquery.length) {
+        request.searchParams.set('queries', this.multiquery.join(' '));
+      } else {
+        request.searchParams.set('query', this.query.root_id);
+      }
+
       request.searchParams.set('root_ids', this.query.historical);
       request.searchParams.set('filtered', this.query.filtered);
       if (this.multiquery.length) {
@@ -89,7 +92,7 @@ const app = new Vue({
           if (row.timestamp) {
             row.timestamp = new Date(row.timestamp).toUTCString();
           }
-        })
+        });
         this.response = rawData;
         this.csv = response.csv.replace(/\[|\]/g, '');
       } else if (this.multiquery.length) {

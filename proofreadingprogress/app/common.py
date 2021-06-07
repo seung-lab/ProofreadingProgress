@@ -90,17 +90,26 @@ def apiRequest(args):
     auth_header = {"Authorization": f"Bearer {auth_token}"}
     rootIds = 'root_ids=' + args.get('root_ids', 'false')
     filtered = 'filtered=' + args.get('filtered', 'true')
-    aggregate = args.get('agg')
-    queryIds = args.get('query').split()
+    aggregate = args.get('queries')
+    query = args.get('query')
     reqs = []
-    for id in queryIds:
-        fullURL = f"https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/root/{id}/tabular_change_log?{rootIds}&{filtered}"
+    if aggregate:
+        queryIds = aggregate.split()
+        fullURL = f"https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/tabular_change_log_many?{rootIds}&{filtered}"
+        r = requests.get(fullURL, headers=auth_header, 
+                data=json.dumps({"root_ids": queryIds}))
+
+        results = json.loads(r.content)
+        for key in results.keys():
+            dataframe = pd.DataFrame.from_dict(json.loads(results[key]))
+            reqs.append(dataframe.to_json(orient='records', date_format='iso'))
+    else:
+        fullURL = f"https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/root/{query}/tabular_change_log?{rootIds}&{filtered}"
         r = requests.get(fullURL, headers=auth_header)
         dataframe = pd.read_json(r.content, 'columns')
         reqs.append(dataframe.to_json(orient='records', date_format='iso'))
-        #dataframe.groupby('user_id').agg(total_edits=pd.NamedAgg(column='total_edits", aggfunc=sum))
         csv = dataframe.to_csv()
-    
+        
     if aggregate:
         jsonstr = json.dumps(reqs)
         csv = ''
