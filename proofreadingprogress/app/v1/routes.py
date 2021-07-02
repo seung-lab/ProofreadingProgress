@@ -64,3 +64,7 @@ def unhandled_exception(e):
 @bp.route('/qry/', methods=['GET'])
 def pass_through():
     return common.apiRequest(request.args)
+
+@bp.route('/published/', methods=['GET'])
+def requestPublished():
+    return common.getPublished()

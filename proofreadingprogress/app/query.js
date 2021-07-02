@@ -10,6 +10,7 @@ function percent(num) {
 const app = new Vue({
   el: '#app',
   data: {
+    published: {},
     query: {root_id: auto_rootid || '', historical: false, filtered: true},
     filters: {
 
@@ -42,12 +43,25 @@ const app = new Vue({
     this.$nextTick(function() {
       // Code that will run only after the
       // entire view has been rendered
+      this.reqPublished()
       if (this.isReady) {
         this.apiRequest();
       }
     })
   },
   methods: {
+    reqPublished: async function() {
+      try {
+        const request = new URL(`${base}/published/`);
+        const response = await fetch(request);
+        const records = await response.text();
+        this.published =
+            records.split(' ').reduce((ac, a) => ({...ac, [a]: true}), {});
+      } catch (e) {
+        alert(`Cannot get published neuron list!`);
+        throw e;
+      }
+    },
     processMQR: function() {
       const multiquerySplit = this.multiqueryRaw.split(/[ ,]+/);
       this.multiquery =
@@ -73,6 +87,7 @@ const app = new Vue({
       }
 
       try {
+        await this.published;
         const response = await fetch(request);
         await this.processData(await response.json());
         this.status = 'Submit';
@@ -85,15 +100,15 @@ const app = new Vue({
       }
     },
     processData: function(response) {
-      rawData = JSON.parse(response.json);
-      if (rawData.length && !this.multiquery.length) {
-        this.headers = Object.keys(rawData[0]);
-        rawData.forEach(row => {
+      rawData = response.json;  // JSON.parse(response.json);
+      if (!this.multiquery.length && rawData.edits.length) {
+        this.headers = Object.keys(rawData.edits[0]);
+        rawData.edits.forEach(row => {
           if (row.timestamp) {
             row.timestamp = new Date(row.timestamp).toUTCString();
           }
         });
-        this.response = rawData;
+        this.response = rawData.edits;
         this.csv = response.csv.replace(/\[|\]/g, '');
       } else if (this.multiquery.length) {
         this.rawResponse = rawData;
@@ -109,9 +124,9 @@ const app = new Vue({
       const userIdsHash = {};
       const segmentList = [];
       this.rawResponse.forEach((e, i) => {
-        const rawSegment = JSON.parse(e);
+        const rawSegment = e;  // JSON.parse(e);
         // ASSUME query order is result order
-        rawSegment.forEach(f => {
+        rawSegment.edits.forEach(f => {
           if (!userIdsHash[f.user_id]) {
             userIdsHash[f.user_id] = {
               user_id: f.user_id,
@@ -129,8 +144,15 @@ const app = new Vue({
         });
         segmentList.push(new Map([
           ['segment_ID', this.multiquery[i]],
-          ['total_edits', rawSegment.length],
-          ['published', ''],
+          ['total_edits', rawSegment.edits.length],
+          ['published', !!this.published[this.multiquery[i]]],
+          [
+            'published_ancestor',
+            rawSegment.lineage.some(
+                r => Object.keys(this.published)
+                         .map(v => parseInt(v))
+                         .includes(r))
+          ]
         ]));
       });
       this.generateResponse(segmentList, userIdsHash);

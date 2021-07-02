@@ -5,7 +5,7 @@ import time
 import requests
 import os
 import pandas as pd
-
+import networkx as nx
 
 __api_versions__ = [0]
 auth_token_file = open(os.path.join(os.path.expanduser("~"), ".cloudvolume/secrets/chunkedgraph-secret.json"))
@@ -85,33 +85,53 @@ def unhandled_exception(e):
 # -------------------
 # ------ Applications
 # -------------------
+def getPublished(): 
+    publishedData = pd.read_csv("./proofreadingprogress/app/cell_temp.csv", header=0, names=['dataset', 'rootid', 'published'])
+    published = list(publishedData['rootid'].to_dict().values())
+    return ' '.join([str(id) for id in published])
 
 def apiRequest(args):
     auth_header = {"Authorization": f"Bearer {auth_token}"}
-    rootIds = 'root_ids=' + args.get('root_ids', 'false')
-    filtered = 'filtered=' + args.get('filtered', 'true')
+    isRootIds = 'root_ids=' + args.get('root_ids', 'false')
+    isFiltered = 'filtered=' + args.get('filtered', 'true')
     aggregate = args.get('queries')
     query = args.get('query')
     reqs = []
     if aggregate:
         queryIds = aggregate.split()
-        fullURL = f"https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/tabular_change_log_many?{rootIds}&{filtered}"
+        fullURL = f"https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/tabular_change_log_many?{isRootIds}&{isFiltered}"
         r = requests.get(fullURL, headers=auth_header, 
                 data=json.dumps({"root_ids": queryIds}))
 
+        lineageURL = f"https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/lineage_graph_multiple"
+        g = requests.post(lineageURL, headers=auth_header, 
+                data=json.dumps({"root_ids": queryIds}))
+
         results = json.loads(r.content)
+        graph = nx.node_link_graph(json.loads(g.content))
         for key in results.keys():
             dataframe = pd.DataFrame.from_dict(json.loads(results[key]))
-            reqs.append(dataframe.to_json(orient='records', date_format='iso'))
+            jsonData = {
+                'edits': json.loads(dataframe.to_json(orient='records', date_format='iso')),
+                'lineage' : list(nx.ancestors(graph, int(key)))
+            }
+            reqs.append(jsonData)
     else:
-        fullURL = f"https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/root/{query}/tabular_change_log?{rootIds}&{filtered}"
+        fullURL = f"https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/root/{query}/tabular_change_log?{isRootIds}&{isFiltered}"
+        lineageURL = f"https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/root/{query}/lineage_graph"
         r = requests.get(fullURL, headers=auth_header)
         dataframe = pd.read_json(r.content, 'columns')
-        reqs.append(dataframe.to_json(orient='records', date_format='iso'))
+        g = requests.get(lineageURL, headers=auth_header)
+        graph = nx.node_link_graph(json.loads(g.content))
+        jsonData = {
+            'edits': json.loads(dataframe.to_json(orient='records', date_format='iso')),
+            'lineage' : list(nx.ancestors(graph, int(query)))
+        }
+        reqs.append(jsonData)
         csv = dataframe.to_csv()
         
     if aggregate:
-        jsonstr = json.dumps(reqs)
+        jsonstr = reqs
         csv = ''
     else:
         jsonstr = reqs[0]
