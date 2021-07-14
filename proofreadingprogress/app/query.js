@@ -11,7 +11,14 @@ const app = new Vue({
   el: '#app',
   data: {
     published: {},
-    query: {root_id: auto_rootid || '', historical: false, filtered: true},
+    query: {
+      root_id: auto_rootid || '',
+      historical: false,
+      filtered: true,
+      lineage: true
+    },
+    dataset:
+        'https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/',
     filters: {
 
     },
@@ -22,11 +29,14 @@ const app = new Vue({
     response: [],
     headers: [],
     colChoices: [],
+    keyindex: 0,
     csv: '',
     userCSV: '',
     userList: {},
     userHeaders: [],
+    importedCSVName: '',
     importedCSVFile: [],
+    idToRowMap: {},
     numval: [{classes: 'numval', rule: /^[0-9]+$/, disableAdd: true}],
     status: 'Submit',
     loading: false
@@ -74,17 +84,16 @@ const app = new Vue({
       this.processMQR();
 
       const request = new URL(`${base}/qry/`);
+      const params =
+          `?root_ids=${this.query.historical}&filtered=${this.query.filtered}`;
       if (this.multiquery.length) {
         request.searchParams.set('queries', this.multiquery.join(' '));
       } else {
         request.searchParams.set('query', this.query.root_id);
       }
-
-      request.searchParams.set('root_ids', this.query.historical);
-      request.searchParams.set('filtered', this.query.filtered);
-      if (this.multiquery.length) {
-        request.searchParams.set('agg', 'true');
-      }
+      request.searchParams.set('dataset', this.dataset);
+      request.searchParams.set('params', params);
+      request.searchParams.set('lineage', this.query.lineage);
 
       try {
         await this.published;
@@ -100,16 +109,22 @@ const app = new Vue({
       }
     },
     processData: function(response) {
+      if (!response.graph) alert('Could not retrieve lineage graph!');
       rawData = response.json;  // JSON.parse(response.json);
-      if (!this.multiquery.length && rawData.edits.length) {
-        this.headers = Object.keys(rawData.edits[0]);
-        rawData.edits.forEach(row => {
-          if (row.timestamp) {
-            row.timestamp = new Date(row.timestamp).toUTCString();
-          }
-        });
-        this.response = rawData.edits;
-        this.csv = response.csv.replace(/\[|\]/g, '');
+      const singleRow = rawData[0];
+      if (!this.multiquery.length && rawData[0]) {
+        if (singleRow.edits.length) {
+          this.headers = Object.keys(singleRow.edits[0]);
+          singleRow.edits.forEach(row => {
+            if (row.timestamp) {
+              row.timestamp = new Date(row.timestamp).toUTCString();
+            }
+          });
+          this.response = singleRow.edits;
+          this.csv = response.csv.replace(/\[|\]/g, '');
+        } else {
+          alert(`Root ID ${this.query.root_id} has no edits`);
+        }
       } else if (this.multiquery.length) {
         this.rawResponse = rawData;
         this.queryProcess();
@@ -118,14 +133,14 @@ const app = new Vue({
     queryProcess: function() {
       /* In lieu of aggreation on server/batching of request
        * Assume user_id always present*
-      Array of SegmentIdResponse Arrays => UserIDMap where each UserID has array
-      of edits per segmentID
+      Array of SegmentIdResponse Arrays => UserIDMap where each UserID has
+      array of edits per segmentID
        */
       const userIdsHash = {};
       const segmentList = [];
       this.rawResponse.forEach((e, i) => {
-        const rawSegment = e;  // JSON.parse(e);
-        // ASSUME query order is result order
+        const rawSegment = e;
+        const id = rawSegment.key;
         rawSegment.edits.forEach(f => {
           if (!userIdsHash[f.user_id]) {
             userIdsHash[f.user_id] = {
@@ -133,7 +148,7 @@ const app = new Vue({
               user_name: f.user_name
             };
           }
-          const id = this.multiquery[i];
+          // const id = this.multiquery[i];
           if (!userIdsHash[f.user_id][id]) {
             userIdsHash[f.user_id][id] = {
               number_of_edits: 1,
@@ -142,18 +157,21 @@ const app = new Vue({
             userIdsHash[f.user_id][id].number_of_edits++;
           }
         });
-        segmentList.push(new Map([
-          ['segment_ID', this.multiquery[i]],
+        const segMapRow = [
+          ['segment_ID', id],  // this.multiquery[i]],
           ['total_edits', rawSegment.edits.length],
-          ['published', !!this.published[this.multiquery[i]]],
-          [
+          ['published', !!this.published[id]],  // this.multiquery[i]]],
+        ];
+        if (this.query.lineage) {
+          segMapRow.push([
             'published_ancestor',
             rawSegment.lineage.some(
                 r => Object.keys(this.published)
                          .map(v => parseInt(v))
                          .includes(r))
-          ]
-        ]));
+          ]);
+        }
+        segmentList.push(new Map(segMapRow));
       });
       this.generateResponse(segmentList, userIdsHash);
     },
@@ -168,6 +186,7 @@ const app = new Vue({
         seg.set('contributor', []);
 
         let segId = seg.get('segment_ID');
+        let isPublished = seg.get('published');
         // there may be a better way to sort (requires filtering)
         let contributor = Object.keys(uids)
                               .filter(a => uids[a][segId])
@@ -178,7 +197,8 @@ const app = new Vue({
         contributor.forEach(uid => {
           let user = uids[uid];
           let contributed = user[segId];
-          let edits = contributed ? contributed.number_of_edits : 0;
+          let edits =
+              contributed && !isPublished ? contributed.number_of_edits : 0;
 
           let percentEdits = percent((edits / seg.get('total_edits')));
           let contributor = new Map([
@@ -219,6 +239,30 @@ const app = new Vue({
       link.setAttribute('download', filename);
       link.click();
     },
+    mergeCSV: function() {
+      const filename = `${this.importedCSVName.name}_merged.csv`;
+      const mergedCSV = [...this.importedCSVFile];
+      Papa.parse(this.csv, {
+        complete: (results) => {
+          results.data.map((row, i) => {
+            const key = i ? this.idToRowMap[row[0].slice(1)] : 0;
+            const firsthalf = mergedCSV[key].slice(0, this.keyindex);
+            const secondhalf = this.keyindex < mergedCSV[key].length - 1 ?
+                mergedCSV[key].slice(this.keyindex + 1) :
+                [];
+            mergedCSV[key] = [...firsthalf, ...secondhalf, ...row];
+          });
+
+          const blob = new Blob(
+              [Papa.unparse(mergedCSV)], {type: 'text/csv;charset=utf-8;'});
+          const link = document.createElement('a');
+          const url = URL.createObjectURL(blob);
+          link.setAttribute('href', url);
+          link.setAttribute('download', filename);
+          link.click();
+        }
+      });
+    },
     exportUserCSV: function() {
       const filename = 'useredits.csv';
       const blob = new Blob([this.userCSV], {type: 'text/csv;charset=utf-8;'});
@@ -232,6 +276,7 @@ const app = new Vue({
       Papa.parse(e.target.files[0], {
         skipEmptyLines: true,
         complete: (results) => {
+          this.importedCSVName = e.target.files[0];
           this.importedCSVFile = results.data;
           this.colChoices = results.data[0];
         }
@@ -242,9 +287,11 @@ const app = new Vue({
     },
     importCol: function(index) {
       this.importedCSVFile.forEach((e, i) => {
+        this.keyindex = index;
         if (i) {
           this.multiqueryRaw =
               this.multiqueryRaw.concat(i == 1 ? '' : ', ', e[index]);
+          this.idToRowMap[e[index]] = i;
         }
       });
     }

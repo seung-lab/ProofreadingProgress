@@ -34,6 +34,15 @@
                     <input name="historical" type="checkbox" v-model.boolean="query.historical">
                     <label for="filtered">Filter extra edits: </label>
                     <input name="filtered" type="checkbox" v-model.boolean="query.filtered">
+                    <label for="lineage">Search Predecessors: </label>
+                    <input name="lineage" type="checkbox" v-model.boolean="query.lineage">
+                    <select v-model="dataset">
+                        <option value="https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/">
+                            Production</option>
+                        <option value="https://minnie.microns-daf.com/segmentation/api/v1/table/fly_training_v2/">
+                            Testing</option>
+                        <option disabled value="">Sandbox</option>
+                    </select>
                 </td>
             </tr>
         </table>

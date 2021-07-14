@@ -92,51 +92,70 @@ def getPublished():
 
 def apiRequest(args):
     auth_header = {"Authorization": f"Bearer {auth_token}"}
-    isRootIds = 'root_ids=' + args.get('root_ids', 'false')
-    isFiltered = 'filtered=' + args.get('filtered', 'true')
+    isLineage = args.get('lineage', 'false') == "true"
     aggregate = args.get('queries')
     query = args.get('query')
+    dataset = args.get('dataset')
+    params = args.get('params')
     reqs = []
+    graph = None
+    graphable = True
     if aggregate:
         queryIds = aggregate.split()
-        fullURL = f"https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/tabular_change_log_many?{isRootIds}&{isFiltered}"
-        r = requests.get(fullURL, headers=auth_header, 
-                data=json.dumps({"root_ids": queryIds}))
-
-        lineageURL = f"https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/lineage_graph_multiple"
-        g = requests.post(lineageURL, headers=auth_header, 
-                data=json.dumps({"root_ids": queryIds}))
-
+        rootQuery = json.dumps({"root_ids": queryIds})
+        fullURL = f"{dataset}tabular_change_log_many{params}"
+        r = requests.get(fullURL, headers=auth_header, data=rootQuery)
         results = json.loads(r.content)
-        graph = nx.node_link_graph(json.loads(g.content))
+        if (isLineage):
+            lineURL = f"{dataset}lineage_graph_multiple"
+            g = requests.post(lineURL, headers=auth_header, 
+                    data=rootQuery)
+            try:
+                graph = nx.node_link_graph(json.loads(g.content))
+            except:
+                graph = None
+                graphable = False
+
+        '''for query in queryIds:
+            fullURL = f"https://minnie.microns-daf.com/segmentation/api/v1/table/fly_training_v2/root/{query}/tabular_change_log?{isRootIds}&{isFiltered}"
+            r = requests.get(fullURL, headers=auth_header)
+            dataframe = pd.read_json(r.content, 'columns')
+            #json.loads(
+            reqs.append(dataframe.to_json(orient='records', date_format='iso'))'''
+
         for key in results.keys():
             dataframe = pd.DataFrame.from_dict(json.loads(results[key]))
             jsonData = {
+                'key': key,
                 'edits': json.loads(dataframe.to_json(orient='records', date_format='iso')),
-                'lineage' : list(nx.ancestors(graph, int(key)))
+                'lineage' : list(nx.ancestors(graph, int(key))) if graph != None else list()
             }
             reqs.append(jsonData)
     else:
-        fullURL = f"https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/root/{query}/tabular_change_log?{isRootIds}&{isFiltered}"
-        lineageURL = f"https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/root/{query}/lineage_graph"
+        fullURL = f"{dataset}root/{query}/tabular_change_log{params}"
         r = requests.get(fullURL, headers=auth_header)
+        results = json.loads(r.content)
+        if (isLineage):
+            lineURL = f"{dataset}root/{query}/lineage_graph"
+            g = requests.get(lineURL, headers=auth_header)
+            try:
+                graph = nx.node_link_graph(json.loads(g.content))
+            except:
+                graph = None
+                graphable = False
+
         dataframe = pd.read_json(r.content, 'columns')
-        g = requests.get(lineageURL, headers=auth_header)
-        graph = nx.node_link_graph(json.loads(g.content))
         jsonData = {
+            'key': query,
             'edits': json.loads(dataframe.to_json(orient='records', date_format='iso')),
-            'lineage' : list(nx.ancestors(graph, int(query)))
+            'lineage' : list(nx.ancestors(graph, int(query))) if graph != None else list()
         }
         reqs.append(jsonData)
         csv = dataframe.to_csv()
         
-    if aggregate:
-        jsonstr = reqs
-        csv = ''
-    else:
-        jsonstr = reqs[0]
     content = {
-        'json': jsonstr,
-        'csv': csv
+        'json': reqs,
+        'csv': '' if aggregate else csv,
+        'graph': graphable
     }
     return content
