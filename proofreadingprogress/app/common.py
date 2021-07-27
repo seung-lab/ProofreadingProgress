@@ -22,6 +22,9 @@ def query():
 def user():
     return send_from_directory('.', 'user.html')
 
+def table():
+    return send_from_directory('.', 'table.html')
+
 def getScripts(name):
     return send_from_directory('.', name)
 
@@ -98,43 +101,53 @@ def apiRequest(args):
     dataset = args.get('dataset')
     params = args.get('params')
     reqs = []
-    graph = None
-    graphable = True
+    error = []
+    nolineage = {}
+    
     if aggregate:
-        queryIds = aggregate.split()
-        rootQuery = json.dumps({"root_ids": queryIds})
+        rqueries = aggregate.split()
         fullURL = f"{dataset}tabular_change_log_many{params}"
-        r = requests.get(fullURL, headers=auth_header, data=rootQuery)
-        results = json.loads(r.content)
-        if (isLineage):
-            lineURL = f"{dataset}lineage_graph_multiple"
-            g = requests.post(lineURL, headers=auth_header, 
-                    data=rootQuery)
+        lineURL = f"{dataset}lineage_graph_multiple"
+        results = {}
+        graphs = []
+        bsize = 10
+        bqueries = [rqueries[i:i + bsize] for i in range(0, len(rqueries), bsize)]
+
+        for batch in bqueries:
+            jbatch = json.dumps({"root_ids": batch})
             try:
-                graph = nx.node_link_graph(json.loads(g.content))
+                r = requests.get(fullURL, headers=auth_header, data=jbatch)
+                results.update(json.loads(r.content))
             except:
-                graph = None
-                graphable = False
+                error = error + batch
+                
+            if (isLineage):
+                try:
+                    g = requests.post(lineURL, headers=auth_header, 
+                            data=jbatch)
+                    graphs.append(nx.node_link_graph(json.loads(g.content)))
+                except:
+                   nolineage.update(dict.fromkeys(batch, True))
 
-        '''for query in queryIds:
-            fullURL = f"https://minnie.microns-daf.com/segmentation/api/v1/table/fly_training_v2/root/{query}/tabular_change_log?{isRootIds}&{isFiltered}"
-            r = requests.get(fullURL, headers=auth_header)
-            dataframe = pd.read_json(r.content, 'columns')
-            #json.loads(
-            reqs.append(dataframe.to_json(orient='records', date_format='iso'))'''
-
+        graph = nx.compose_all(graphs) if len(graphs) > 0 else None
         for key in results.keys():
-            dataframe = pd.DataFrame.from_dict(json.loads(results[key]))
-            jsonData = {
-                'key': key,
-                'edits': json.loads(dataframe.to_json(orient='records', date_format='iso')),
-                'lineage' : list(nx.ancestors(graph, int(key))) if graph != None else list()
-            }
-            reqs.append(jsonData)
+            try:
+                dataframe = pd.DataFrame.from_dict(json.loads(results[key]))
+                jsonData = {
+                    'key': key,
+                    'edits': json.loads(dataframe.to_json(orient='records', date_format='iso')),
+                    'lineage' : list(nx.ancestors(graph, int(key))) if graph != None else list()
+                }
+                reqs.append(jsonData)
+            except:
+                print("error")
     else:
         fullURL = f"{dataset}root/{query}/tabular_change_log{params}"
-        r = requests.get(fullURL, headers=auth_header)
-        results = json.loads(r.content)
+        try:
+            r = requests.get(fullURL, headers=auth_header)
+            results = json.loads(r.content)
+        except:
+            error = [query]
         if (isLineage):
             lineURL = f"{dataset}root/{query}/lineage_graph"
             g = requests.get(lineURL, headers=auth_header)
@@ -142,7 +155,7 @@ def apiRequest(args):
                 graph = nx.node_link_graph(json.loads(g.content))
             except:
                 graph = None
-                graphable = False
+                nolineage = nolineage[query] = True
 
         dataframe = pd.read_json(r.content, 'columns')
         jsonData = {
@@ -156,6 +169,7 @@ def apiRequest(args):
     content = {
         'json': reqs,
         'csv': '' if aggregate else csv,
-        'graph': graphable
+        'error': error,
+        'errorgraph': nolineage
     }
     return content

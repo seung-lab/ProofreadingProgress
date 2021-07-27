@@ -36,95 +36,61 @@
 
 <body>
     <div id="app">
-        <div class="accordion" id="a-id">
-            <div class="accordion-item">
-                <h2 class="accordion-header" id="h-1">
-                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#c-1"
-                        aria-expanded="true" aria-controls="c-1">
-                        ▸
+        <table>
+            <tr>
+                <td align="right"><label for="query">Query: </label></td>
+                <td align="left">
+                    <!--<vue-tags-input v-model="tag" placeholder="Add Root Id" :validation="numval"
+                                                :tags="multiquery" @tags-changed="newTags => multiquery = newTags" />-->
+                    <textarea v-model="multiqueryRaw"></textarea>
+                </td>
+                <td align="left">
+                    <button class="btn btn-primary" type="button" @click="apiRequest" :disabled="!isReady">
+                        <span class="spinner-border spinner-border-sm" aria-hidden="true" v-show="loading"></span>
+                        {{ status }}
                     </button>
-                </h2>
-                <div id="c-1" class="accordion-collapse collapse show" aria-labelledby="h-1" data-bs-parent="#a-id">
-                    <div class="accordion-body">
-                        <table>
-                            <tr>
-                                <td align="right"><label for="query">Query: </label></td>
-                                <td align="left">
-                                    <!--<vue-tags-input v-model="tag" placeholder="Add Root Id" :validation="numval"
-                                        :tags="multiquery" @tags-changed="newTags => multiquery = newTags" />-->
-                                    <textarea v-model="multiqueryRaw"></textarea>
-                                </td>
-                                <td align="left">
-                                    <button class="btn btn-primary" type="button" @click="apiRequest"
-                                        :disabled="!isReady">
-                                        <span class="spinner-border spinner-border-sm" aria-hidden="true"
-                                            v-show="loading"></span>
-                                        {{ status }}
-                                    </button>
-                                    <button @click="chooseCSV" class="btn btn-primary">Import CSV</button>
-                                    <input style="display: none" type="file" id="import" @change="importCSV">
-                                </td>
-                            </tr>
-                            <tr>
-                                <td></td>
-                                <td align="left">
-                                    <label for="historical">Show related root ids: </label>
-                                    <input name="historical" type="checkbox" v-model.boolean="query.historical">
-                                    <label for="filtered">Filter extra edits: </label>
-                                    <input name="filtered" type="checkbox" v-model.boolean="query.filtered">
-                                    <label for="lineage">Search Predecessors: </label>
-                                    <input name="lineage" type="checkbox" v-model.boolean="query.lineage">
-                                    <select v-model="dataset">
-                                        <option
-                                            value="https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/">
-                                            Production</option>
-                                        <option
-                                            value="https://minnie.microns-daf.com/segmentation/api/v1/table/fly_training_v2/">
-                                            Testing</option>
-                                        <option disabled value="">Sandbox</option>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr v-show='colChoices.length !== 0'>
-                                <td align='right'><label>Csv Column: </label></td>
-                                <td align='left'>
-                                    <button @click="importCol(c)" v-for="(col, c) in colChoices"
-                                        class="btn btn-primary">{{col}}</button>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+                    <button @click="chooseCSV" class="btn btn-primary">Import CSV</button>
+                    <input style="display: none" type="file" id="import" @change="importCSV">
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td align="left">
+                    <label for="historical">Show related root ids: </label>
+                    <input name="historical" type="checkbox" v-model.boolean="query.historical">
+                    <label for="filtered">Filter extra edits: </label>
+                    <input name="filtered" type="checkbox" v-model.boolean="query.filtered">
+                    <label for="lineage">Search Predecessors: </label>
+                    <input name="lineage" type="checkbox" v-model.boolean="query.lineage">
+                    <select v-model="dataset">
+                        <option value="https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/">
+                            Production</option>
+                        <option value="https://minnie.microns-daf.com/segmentation/api/v1/table/fly_training_v2/">
+                            Testing</option>
+                        <option disabled value="">Sandbox</option>
+                    </select>
+                </td>
+            </tr>
+            <tr v-show='colChoices.length !== 0'>
+                <td align='right'><label>Csv Column: </label></td>
+                <td align='left'>
+                    <button @click="importCol(c)" v-for="(col, c) in colChoices"
+                        class="btn btn-primary">{{col}}</button>
+                </td>
+            </tr>
+            <tr v-show='response.length !== 0'>
+                <td align="right"><label for="query">Failed: </label></td>
+                <td align="left">
+                    <textarea v-model="failed"></textarea>
+                </td>
+            </tr>
+        </table>
+        <button @click="viewResults" :disabled="!response.length" class="btn btn-primary">View Edit Table</button>
         <button @click="exportCSV" :disabled="!response.length" class="btn btn-primary">Export CSV</button>
         <button @click="mergeCSV" :disabled="!response.length" class="btn btn-primary">Merge CSV</button>
-        <table class="table table-bordered" v-show="response.length">
-            <thead>
-                <tr>
-                    <th v-for="header in headers">{{header}}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="row in response">
-                    <td v-for="cell in row">{{cell}}</td>
-                </tr>
-            </tbody>
-        </table>
         <br><br>
+        <button @click="viewUsers" :disabled="!userList.length" class="btn btn-primary">View User Table</button>
         <button @click="exportUserCSV" :disabled="!userCSV.length" class="btn btn-primary">Export CSV</button>
-        <table class="table table-bordered" v-show="userList.length">
-            <thead>
-                <tr>
-                    <th v-for="uheader in userHeaders">{{uheader}}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="urow in userList">
-                    <td v-for="key in Object.keys(urow)">{{urow[key]}}</td>
-                </tr>
-            </tbody>
-        </table>
     </div>
     <script src="query.js"></script>
 </body>

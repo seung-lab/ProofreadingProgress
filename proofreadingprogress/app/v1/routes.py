@@ -20,6 +20,10 @@ def query():
 def user():
     return common.user()
 
+@bp.route('/table', methods=['GET', "POST"])
+def table():
+    return common.table()
+
 @bp.route('/<name>.js', methods=['GET'])
 def scripts(name):
     return common.getScripts(name+".js")

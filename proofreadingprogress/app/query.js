@@ -1,11 +1,41 @@
 const base = `${window.location.origin}/api/v1`;
 const params = (new URL(document.location)).searchParams;
 const auto_rootid = params.get('rootid');
+const wparams = `location=no,toolbar=no,menubar=no,width=620,left=0,top=0`;
 function percent(num) {
   var m = Number((Math.abs(num) * 10000).toPrecision(15));
   return (Math.round(m) * Math.sign(num)) / 100;
 }
+function openWindowWithGet(url, data, name = '', params = '') {
+  var usp = new URLSearchParams(data);
+  window.open(`${url}?${usp.toString()}`, name, params);
+}
+function openWindowWithPost(url, data) {
+  var form = document.createElement('form');
+  form.target = '_blank';
+  form.method = 'POST';
+  form.action = url;
+  form.style.display = 'none';
 
+  for (var key in data) {
+    var input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = key;
+    input.value = data[key];
+    form.appendChild(input);
+  }
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
+
+  /*if (map) {
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  } else {
+    alert('You must allow popups to display table.');
+  }*/
+}
 // TODO: CLEANUP
 const app = new Vue({
   el: '#app',
@@ -25,6 +55,7 @@ const app = new Vue({
     tag: '',
     multiqueryRaw: '',
     multiquery: [],
+    failed: '',
     rawResponse: [],
     response: [],
     headers: [],
@@ -84,7 +115,7 @@ const app = new Vue({
       this.processMQR();
 
       const request = new URL(`${base}/qry/`);
-      const params =
+      const parameters =
           `?root_ids=${this.query.historical}&filtered=${this.query.filtered}`;
       if (this.multiquery.length) {
         request.searchParams.set('queries', this.multiquery.join(' '));
@@ -92,7 +123,7 @@ const app = new Vue({
         request.searchParams.set('query', this.query.root_id);
       }
       request.searchParams.set('dataset', this.dataset);
-      request.searchParams.set('params', params);
+      request.searchParams.set('params', parameters);
       request.searchParams.set('lineage', this.query.lineage);
 
       try {
@@ -109,10 +140,11 @@ const app = new Vue({
       }
     },
     processData: function(response) {
-      if (!response.graph) alert('Could not retrieve lineage graph!');
       rawData = response.json;  // JSON.parse(response.json);
       const singleRow = rawData[0];
       if (!this.multiquery.length && rawData[0]) {
+        if (response.errorgraph.length)
+          alert('Could not retrieve lineage graph!');
         if (singleRow.edits.length) {
           this.headers = Object.keys(singleRow.edits[0]);
           singleRow.edits.forEach(row => {
@@ -126,11 +158,11 @@ const app = new Vue({
           alert(`Root ID ${this.query.root_id} has no edits`);
         }
       } else if (this.multiquery.length) {
-        this.rawResponse = rawData;
-        this.queryProcess();
+        // this.rawResponse = rawData;
+        this.queryProcess(response);
       }
     },
-    queryProcess: function() {
+    queryProcess: function(data) {
       /* In lieu of aggreation on server/batching of request
        * Assume user_id always present*
       Array of SegmentIdResponse Arrays => UserIDMap where each UserID has
@@ -138,10 +170,9 @@ const app = new Vue({
        */
       const userIdsHash = {};
       const segmentList = [];
-      this.rawResponse.forEach((e, i) => {
-        const rawSegment = e;
-        const id = rawSegment.key;
-        rawSegment.edits.forEach(f => {
+      data.json.forEach((seg, i) => {
+        const id = seg.key;
+        seg.edits.forEach(f => {
           if (!userIdsHash[f.user_id]) {
             userIdsHash[f.user_id] = {
               user_id: f.user_id,
@@ -159,16 +190,17 @@ const app = new Vue({
         });
         const segMapRow = [
           ['segment_ID', id],  // this.multiquery[i]],
-          ['total_edits', rawSegment.edits.length],
+          ['total_edits', seg.edits.length],
           ['published', !!this.published[id]],  // this.multiquery[i]]],
         ];
         if (this.query.lineage) {
           segMapRow.push([
             'published_ancestor',
-            rawSegment.lineage.some(
-                r => Object.keys(this.published)
-                         .map(v => parseInt(v))
-                         .includes(r))
+            data.errorgraph[id] ? 'N/A' :
+                                  seg.lineage.some(
+                                      r => Object.keys(this.published)
+                                               .map(v => parseInt(v))
+                                               .includes(r))
           ]);
         }
         segmentList.push(new Map(segMapRow));
@@ -239,6 +271,16 @@ const app = new Vue({
       link.setAttribute('download', filename);
       link.click();
     },
+    viewResults: function() {
+      let headers = JSON.stringify(this.headers);
+      let response = JSON.stringify(this.response);
+      openWindowWithGet(
+          new URL(`${base}/table`), {headers, response}, `Edits Table`,
+          wparams);
+      /*let editTable =
+          window.open(new URL(`${base}/table`), `Edits Table`, wparams);
+      openWindowWithPost(new URL(`${base}/table`), {headers, response});*/
+    },
     mergeCSV: function() {
       const filename = `${this.importedCSVName.name}_merged.csv`;
       const mergedCSV = [...this.importedCSVFile];
@@ -271,6 +313,15 @@ const app = new Vue({
       link.setAttribute('href', url);
       link.setAttribute('download', filename);
       link.click();
+    },
+    viewUsers: function() {
+      let headers = JSON.stringify(this.userHeaders);
+      let response = JSON.stringify(this.userList.map(r => Object.values(r)));
+      openWindowWithGet(
+          new URL(`${base}/table`), {headers, response}, `User Table`, wparams);
+      /*let userTable =
+          window.open(new URL(`${base}/table`), `User Table`, wparams);
+      openWindowWithPost(new URL(`${base}/table`), {headers, response});*/
     },
     importCSV: function(e) {
       Papa.parse(e.target.files[0], {
