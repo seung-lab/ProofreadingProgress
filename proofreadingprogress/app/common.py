@@ -1,4 +1,4 @@
-from proofreadingprogress.app.sql import connect_db, publishedDict
+from proofreadingprogress.app.sql import connect_db, publishedDict, isPublished
 from flask import request, make_response, g
 from flask import current_app, send_from_directory
 import json
@@ -90,11 +90,6 @@ def unhandled_exception(e):
 # -------------------
 # ------ Applications
 # -------------------
-def getPublished(): 
-    publishedData = pd.read_csv("./proofreadingprogress/app/cell_temp.csv", header=0, names=['dataset', 'rootid', 'published'])
-    published = list(publishedData['rootid'].to_dict().values())
-    return ' '.join([str(id) for id in published])
-
 def apiRequest(args):
     auth_header = {"Authorization": f"Bearer {auth_token}"}
     isLineage = args.get('lineage', 'false') == "true"
@@ -141,7 +136,7 @@ def apiRequest(args):
                     'key': key,
                     'edits': json.loads(dataframe.to_json(orient='records', date_format='iso')),
                     'lineage' : list(nx.ancestors(graph, int(key))) if graph != None else list(),
-                    'published': pubDict[int(key)]
+                    'published': pubDict.get(int(key), False)
                 }
                 reqs.append(jsonData)
             except:
@@ -163,11 +158,14 @@ def apiRequest(args):
                 nolineage = nolineage[query] = True
 
         dataframe = pd.read_json(r.content, 'columns')
+        conn = engine.connect()
         jsonData = {
             'key': query,
             'edits': json.loads(dataframe.to_json(orient='records', date_format='iso')),
-            'lineage' : list(nx.ancestors(graph, int(query))) if graph != None else list()
+            'lineage' : list(nx.ancestors(graph, int(query))) if graph != None else list(),
+            'published': isPublished(conn, int(query))
         }
+        conn.close()
         reqs.append(jsonData)
         csv = dataframe.to_csv()
         

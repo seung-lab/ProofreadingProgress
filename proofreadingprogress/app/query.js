@@ -80,29 +80,7 @@ const app = new Vue({
           !this.loading;
     }
   },
-  mounted() {
-    this.$nextTick(function() {
-      // Code that will run only after the
-      // entire view has been rendered
-      this.reqPublished()
-      if (this.isReady) {
-        this.apiRequest();
-      }
-    })
-  },
   methods: {
-    reqPublished: async function() {
-      try {
-        const request = new URL(`${base}/published/`);
-        const response = await fetch(request);
-        const records = await response.text();
-        this.published =
-            records.split(' ').reduce((ac, a) => ({...ac, [a]: true}), {});
-      } catch (e) {
-        alert(`Cannot get published neuron list!`);
-        throw e;
-      }
-    },
     processMQR: function() {
       const multiquerySplit = this.multiqueryRaw.split(/[ ,]+/);
       this.multiquery =
@@ -191,7 +169,7 @@ const app = new Vue({
         const segMapRow = [
           ['segment_ID', id],  // this.multiquery[i]],
           ['total_edits', seg.edits.length],
-          ['published', !!this.published[id]],  // this.multiquery[i]]],
+          ['published', seg.published],  // this.multiquery[i]]],
         ];
         if (this.query.lineage) {
           segMapRow.push([
