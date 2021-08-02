@@ -1,3 +1,4 @@
+from proofreadingprogress.app.sql import connect_db, publishedDict
 from flask import request, make_response, g
 from flask import current_app, send_from_directory
 import json
@@ -11,6 +12,7 @@ __api_versions__ = [0]
 auth_token_file = open(os.path.join(os.path.expanduser("~"), ".cloudvolume/secrets/chunkedgraph-secret.json"))
 auth_token_json = json.loads(auth_token_file.read())
 auth_token = auth_token_json["token"]
+engine = connect_db()
 
 # -------------------------------
 # ------ Access control and index
@@ -128,7 +130,9 @@ def apiRequest(args):
                     graphs.append(nx.node_link_graph(json.loads(g.content)))
                 except:
                    nolineage.update(dict.fromkeys(batch, True))
-
+        
+        with engine.connect() as conn:
+            pubDict = publishedDict(conn, rqueries)
         graph = nx.compose_all(graphs) if len(graphs) > 0 else None
         for key in results.keys():
             try:
@@ -136,7 +140,8 @@ def apiRequest(args):
                 jsonData = {
                     'key': key,
                     'edits': json.loads(dataframe.to_json(orient='records', date_format='iso')),
-                    'lineage' : list(nx.ancestors(graph, int(key))) if graph != None else list()
+                    'lineage' : list(nx.ancestors(graph, int(key))) if graph != None else list(),
+                    'published': pubDict[int(key)]
                 }
                 reqs.append(jsonData)
             except:
