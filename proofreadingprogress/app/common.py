@@ -9,6 +9,7 @@ import pandas as pd
 import networkx as nx
 
 __api_versions__ = [0]
+
 auth_token_file = open(os.path.join(os.path.expanduser("~"), ".cloudvolume/secrets/chunkedgraph-secret.json"))
 auth_token_json = json.loads(auth_token_file.read())
 auth_token = auth_token_json["token"]
@@ -91,7 +92,7 @@ def unhandled_exception(e):
 # ------ Applications
 # -------------------
 def apiRequest(args):
-    auth_header = {"Authorization": f"Bearer {auth_token}"}
+    auth_header = {"Authorization": f"Bearer {auth_token = flask.g.get('auth_token', auth_token )}"}
     isLineage = args.get('lineage', 'false') == "true"
     aggregate = args.get('queries')
     query = args.get('query')
