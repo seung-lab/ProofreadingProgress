@@ -21,8 +21,11 @@ def query():
 def user():
     return common.user()
 
+@bp.route("/publish", methods=["GET"])
+def publish():
+    return common.publish()
 
-@bp.route("/table", methods=["GET", "POST"])
+@bp.route('/table', methods=['GET', "POST"])
 def table():
     return common.table()
 
@@ -77,7 +80,6 @@ def unhandled_exception(e):
 def pass_through():
     return common.apiRequest(request.args)
 
-
-@bp.route("/published/", methods=["GET"])
-def requestPublished():
-    return common.getPublished()
+@bp.route('/pub/', methods=['GET'])
+def publish_neurons():
+    return common.publish_neurons(request.args)

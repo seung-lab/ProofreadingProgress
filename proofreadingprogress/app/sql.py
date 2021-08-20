@@ -3,6 +3,7 @@ from sqlalchemy import text, String, BigInteger, Boolean
 import pandas as pd
 
 def get_password():
+    #move to environmental variable
     file = open('C://wamp64//www//ProofreadingProgress//proofreadingprogress//app//secret.txt', "r")
     password = file.read()
     file.close()
@@ -62,8 +63,8 @@ def main():
             print(row)
         print(publishedDict(conn, [720575940619258495]))
         print(publishedDict(conn, [720575940619258000]))
-        publishRootIds(conn, "fly_31", [720575940619258000])
-        print(publishedDict(conn, [720575940619258000]))
+        #publishRootIds(conn, "fly_31", [720575940619258000])
+        #print(publishedDict(conn, [720575940619258000]))
 
     #for deployment: need to add the proxy as a service
 table_name = "test-publish"
