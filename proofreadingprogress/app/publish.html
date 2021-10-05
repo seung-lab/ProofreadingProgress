@@ -38,7 +38,8 @@
             <tr>
                 <td align="right"><label for="query">Root Ids: </label></td>
                 <td align="left">
-                    <textarea v-model="multiqueryRaw" style="resize: both; width: 100%;"></textarea>
+                    <textarea v-model="multiqueryRaw" style="resize: both; width: 100%;"
+                        v-bind:class="validRoots"></textarea>
                 </td>
                 <td align="left">
                     <button class="btn btn-primary" type="button" @click="apiRequest" :disabled="!isReady">
@@ -47,6 +48,18 @@
                     </button>
                     <button @click="chooseCSV" class="btn btn-primary">Import CSV</button>
                     <input style="display: none" type="file" id="import" @change="importCSV">
+                </td>
+            </tr>
+            <tr>
+                <td align="right"><label for="query">DOI: </label></td>
+                <td align="left">
+                    <input type="text" v-model="doi" v-bind:class="validDOI" name="Digital Object Identifier">
+                </td>
+            </tr>
+            <tr>
+                <td align="right"><label for="query">Paper Name: </label></td>
+                <td align="left">
+                    <input type="text" v-model="pname" name="Paper Name" v-bind:class="validTitle">
                 </td>
             </tr>
             <tr>

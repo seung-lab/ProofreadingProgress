@@ -3,6 +3,7 @@ from flask import request
 from flask_cors import cross_origin
 from middle_auth_client import auth_required
 from proofreadingprogress.app import common
+import pandas as pd
 
 bp = Blueprint("proofreadingprogress_v1", __name__, url_prefix="/api/v1")
 
@@ -51,7 +52,7 @@ def home():
 
 
 @bp.before_request
-@auth_required
+#@auth_required
 def before_request():
     return common.before_request()
 
@@ -83,3 +84,11 @@ def pass_through():
 @bp.route('/pub/', methods=['GET'])
 def publish_neurons():
     return common.publish_neurons(request.args)
+
+@bp.route('/pubreq/', methods=['GET'])
+def publish_request():
+    return common.publishRequest(request.args)
+
+@bp.route('/pubdmp/', methods=['GET'])
+def publish_dump():
+    return common.publishDump()

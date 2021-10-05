@@ -15,6 +15,8 @@ const app = new Vue({
     verify: true,
     dataset:
         'https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/',
+    doi: '',
+    pname: '',
     tag: '',
     multiqueryRaw: '',
     multiquery: [],
@@ -37,13 +39,45 @@ const app = new Vue({
   },
   computed: {
     isReady: function() {
-      return this.multiqueryRaw.length && !this.loading;
+      return this.multiqueryRaw.length && this.validateAll() && !this.loading;
     },
     customDataset: function() {
       return [fly_v31, fly_training_v2].includes(this.dataset);
+    },
+    validRoots: function() {
+      const valid = this.rootsIDTest();
+      return {
+        'form-error': !valid, valid
+      }
+    },
+    validDOI: function() {
+      const valid = this.DOITest();
+      return {
+        'form-error': !valid, valid
+      }
+    },
+    validTitle: function() {
+      const valid = this.titleTest();
+      return {
+        'form-error': !valid, valid
+      }
     }
   },
   methods: {
+    validateAll: function() {
+      return this.rootsIDTest() && this.DOITest() && this.titleTest();
+    },
+    rootsIDTest: function() {
+      return /^ *\d+ *(?:, *\d+ *)*$/gm.test(this.multiqueryRaw) ||
+          !this.multiqueryRaw.length;
+    },
+    DOITest: function() {
+      return /^10.\d{4,9}[-._;()/:A-Z0-9]+$/i.test(this.doi) ||
+          !this.doi.length;
+    },
+    titleTest: function() {
+      return /^[\w\-\s]+$/.test(this.pname) || !this.pname.length;
+    },
     processMQR: function() {
       const multiquerySplit = this.multiqueryRaw.split(/[ ,]+/);
       this.multiquery =
@@ -55,8 +89,14 @@ const app = new Vue({
       this.status = 'Loading...';
       this.processMQR();
 
-      const request = new URL(`${base}/qry/`);
+      const request = new URL(`${base}/pub/`);
       request.searchParams.set('queries', this.multiquery.join(' '));
+      request.searchParams.set('verify', this.verify);
+      request.searchParams.set('doi', this.doi);
+      request.searchParams.set('pname', this.pname);
+      let path = new URL(this.dataset).pathname.split('/');
+      path.pop();
+      request.searchParams.set('dataset', path.pop());
 
       try {
         await this.published;
@@ -72,72 +112,16 @@ const app = new Vue({
       }
     },
     processData: function(response) {
-      rawData = response.json;  // JSON.parse(response.json);
-      const singleRow = rawData[0];
-      if (!this.multiquery.length && rawData[0]) {
-        if (response.errorgraph.length)
-          alert('Could not retrieve lineage graph!');
-        if (singleRow.edits.length) {
-          this.headers = Object.keys(singleRow.edits[0]);
-          singleRow.edits.forEach(row => {
-            if (row.timestamp) {
-              row.timestamp = new Date(row.timestamp).toUTCString();
-            }
-          });
-          this.response = singleRow.edits;
-          this.csv = response.csv.replace(/\[|\]/g, '');
-        } else {
-          alert(`Root ID ${this.query.root_id} has no edits`);
-        }
-      } else if (this.multiquery.length) {
-        // this.rawResponse = rawData;
-        this.queryProcess(response);
-      }
+      this.queryProcess(response);
     },
     queryProcess: function(data) {
-      /* In lieu of aggreation on server/batching of request
-       * Assume user_id always present*
-      Array of SegmentIdResponse Arrays => UserIDMap where each UserID has
-      array of edits per segmentID
-       */
-      const userIdsHash = {};
-      const segmentList = [];
-      data.json.forEach((seg, i) => {
-        const id = seg.key;
-        seg.edits.forEach(f => {
-          if (!userIdsHash[f.user_id]) {
-            userIdsHash[f.user_id] = {
-              user_id: f.user_id,
-              user_name: f.user_name
-            };
-          }
-          // const id = this.multiquery[i];
-          if (!userIdsHash[f.user_id][id]) {
-            userIdsHash[f.user_id][id] = {
-              number_of_edits: 1,
-            };
-          } else {
-            userIdsHash[f.user_id][id].number_of_edits++;
-          }
-        });
-        const segMapRow = [
-          ['segment_ID', id],  // this.multiquery[i]],
-          ['total_edits', seg.edits.length],
-          ['published', seg.published],  // this.multiquery[i]]],
-        ];
-        if (this.query.lineage) {
-          segMapRow.push([
-            'published_ancestor',
-            data.errorgraph[id] ? 'N/A' :
-                                  seg.lineage.some(
-                                      r => Object.keys(this.published)
-                                               .map(v => parseInt(v))
-                                               .includes(r))
-          ]);
+      let rows = Object.values(data);
+      rows.forEach(f => {
+        if (this.headers.length == 0) {
+          this.headers = Object.keys(f);
         }
-        segmentList.push(new Map(segMapRow));
+        this.response = [...this.response, Object.values(f)];
       });
-      this.generateResponse(segmentList, userIdsHash);
     },
     generateResponse: function(segments, uids) {
       this.userHeaders =

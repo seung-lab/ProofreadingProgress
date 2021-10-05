@@ -5,6 +5,9 @@ td[align="left"] > input[type="text"] {
 td[align="right"] {
     width: 120px;
 }
+.form-error{
+    border:2px solid red;
+}
 
 input.number {
     width: 60px;
