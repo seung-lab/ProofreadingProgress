@@ -42,7 +42,7 @@
                 <td align="left">
                     <!--<vue-tags-input v-model="tag" placeholder="Add Root Id" :validation="numval"
                                                 :tags="multiquery" @tags-changed="newTags => multiquery = newTags" />-->
-                    <textarea v-model="multiqueryRaw"></textarea>
+                    <textarea v-model="str_multiquery" v-bind:class="validRoots"></textarea>
                 </td>
                 <td align="left">
                     <button class="btn btn-primary" type="button" @click="apiRequest" :disabled="!isReady">

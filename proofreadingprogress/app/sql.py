@@ -40,15 +40,11 @@ def connect_db(show = False):
 def tableDump(conn):
     return pd.read_sql_table(table_name, conn)
 
-"""
-def arePublished(conn, root_ids):
-    result = publishedDict(conn, root_ids)
-    if (len(result) == len(root_ids)):
-        for i in result:
-            print(i)
-    
-    return false
-"""
+def isPublished(conn, root_id):
+    result = conn.execute(text(f'SELECT published FROM "{table_name}" WHERE root_id={root_id}'))
+    return result.rowcount > 0 and result.first()[0]
+
+
 
 def publishedDict(conn, root_ids, display = False):
     str_rids = [str(int) for int in root_ids]
@@ -65,10 +61,10 @@ def publishedDict(conn, root_ids, display = False):
         dictlist[row[1]] = dict(row)
     return dictlist
 
-def publishRootIds(conn, dataset, root_ids, doi = '', paper = '', exists="append"):
+def publishRootIds(conn, dataset, root_ids, doi = '', paper = '', exists="append", user=0):
     data = {}
     for i in root_ids:
-        data[i] = [dataset, i, 0, True, doi, paper]
+        data[i] = [dataset, i, user, True, doi, paper]
 
     df = pd.DataFrame.from_dict(data, orient='index',
     columns=['table_id', 'root_id', 'user_id', 'published', 'doi', 'paper_name'])

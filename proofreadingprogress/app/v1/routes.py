@@ -52,7 +52,7 @@ def home():
 
 
 @bp.before_request
-#@auth_required
+@auth_required
 def before_request():
     return common.before_request()
 

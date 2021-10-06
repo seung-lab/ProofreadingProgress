@@ -2,6 +2,7 @@ const base = `${window.location.origin}/api/v1`;
 const params = (new URL(document.location)).searchParams;
 const auto_rootid = params.get('rootid');
 const wparams = `location=no,toolbar=no,menubar=no,width=620,left=0,top=0`;
+// HELPERS
 function percent(num) {
   var m = Number((Math.abs(num) * 10000).toPrecision(15));
   return (Math.round(m) * Math.sign(num)) / 100;
@@ -27,20 +28,12 @@ function openWindowWithPost(url, data) {
   document.body.appendChild(form);
   form.submit();
   document.body.removeChild(form);
-
-  /*if (map) {
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
-  } else {
-    alert('You must allow popups to display table.');
-  }*/
 }
-// TODO: CLEANUP
+
 const app = new Vue({
   el: '#app',
   data: {
-    published: {},
+    // INPUT
     query: {
       root_id: auto_rootid || '',
       historical: false,
@@ -49,26 +42,22 @@ const app = new Vue({
     },
     dataset:
         'https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/',
-    filters: {
-
-    },
-    tag: '',
-    multiqueryRaw: '',
-    multiquery: [],
+    str_multiquery: '',
+    // OUTPUT
     failed: '',
-    rawResponse: [],
     response: [],
     headers: [],
-    colChoices: [],
-    keyindex: 0,
     csv: '',
     userCSV: '',
     userList: {},
     userHeaders: [],
+    // IMPORT
+    colChoices: [],
+    keyindex: 0,
     importedCSVName: '',
     importedCSVFile: [],
     idToRowMap: {},
-    numval: [{classes: 'numval', rule: /^[0-9]+$/, disableAdd: true}],
+    // ETC
     status: 'Submit',
     loading: false
   },
@@ -76,27 +65,31 @@ const app = new Vue({
     isReady: function() {
       return (this.query.root_id.length &&
                   !isNaN(parseInt(this.query.root_id)) ||
-              this.multiqueryRaw.length) &&
-          !this.loading;
-    }
+              this.str_multiquery.length) &&
+          this.rootsIDTest() && !this.loading;
+    },
+    validRoots: function() {
+      const valid = this.rootsIDTest();
+      return {
+        'form-error': !valid, valid
+      }
+    },
   },
   methods: {
-    processMQR: function() {
-      const multiquerySplit = this.multiqueryRaw.split(/[ ,]+/);
-      this.multiquery =
-          multiquerySplit.filter(e => e.length && !isNaN(parseInt(e)))
+    rootsIDTest: function() {
+      return /^ *\d+ *(?:, *\d+ *)*$/gm.test(this.str_multiquery) ||
+          !this.str_multiquery.length;
     },
     apiRequest: async function() {
       // Disable button, activate spinner
       this.loading = true;
       this.status = 'Loading...';
-      this.processMQR();
 
       const request = new URL(`${base}/qry/`);
       const parameters =
           `?root_ids=${this.query.historical}&filtered=${this.query.filtered}`;
-      if (this.multiquery.length) {
-        request.searchParams.set('queries', this.multiquery.join(' '));
+      if (!this.query.root_id.length) {
+        request.searchParams.set('queries', this.str_multiquery);
       } else {
         request.searchParams.set('query', this.query.root_id);
       }
@@ -120,7 +113,7 @@ const app = new Vue({
     processData: function(response) {
       rawData = response.json;  // JSON.parse(response.json);
       const singleRow = rawData[0];
-      if (!this.multiquery.length && rawData[0]) {
+      if (!this.str_multiquery.length && rawData[0]) {
         if (response.errorgraph.length)
           alert('Could not retrieve lineage graph!');
         if (singleRow.edits.length) {
@@ -135,8 +128,7 @@ const app = new Vue({
         } else {
           alert(`Root ID ${this.query.root_id} has no edits`);
         }
-      } else if (this.multiquery.length) {
-        // this.rawResponse = rawData;
+      } else if (this.str_multiquery.length) {
         this.queryProcess(response);
       }
     },
@@ -157,7 +149,6 @@ const app = new Vue({
               user_name: f.user_name
             };
           }
-          // const id = this.multiquery[i];
           if (!userIdsHash[f.user_id][id]) {
             userIdsHash[f.user_id][id] = {
               number_of_edits: 1,
@@ -167,18 +158,13 @@ const app = new Vue({
           }
         });
         const segMapRow = [
-          ['segment_ID', id],  // this.multiquery[i]],
+          ['segment_ID', id],
           ['total_edits', seg.edits.length],
-          ['published', seg.published],  // this.multiquery[i]]],
+          ['published', seg.published],
         ];
         if (this.query.lineage) {
           segMapRow.push([
-            'published_ancestor',
-            data.errorgraph[id] ? 'N/A' :
-                                  seg.lineage.some(
-                                      r => Object.keys(this.published)
-                                               .map(v => parseInt(v))
-                                               .includes(r))
+            'published_ancestor', data.errorgraph[id] ? 'N/A' : seg.lineage
           ]);
         }
         segmentList.push(new Map(segMapRow));
@@ -255,9 +241,6 @@ const app = new Vue({
       openWindowWithGet(
           new URL(`${base}/table`), {headers, response}, `Edits Table`,
           wparams);
-      /*let editTable =
-          window.open(new URL(`${base}/table`), `Edits Table`, wparams);
-      openWindowWithPost(new URL(`${base}/table`), {headers, response});*/
     },
     mergeCSV: function() {
       const filename = `${this.importedCSVName.name}_merged.csv`;
@@ -297,9 +280,6 @@ const app = new Vue({
       let response = JSON.stringify(this.userList.map(r => Object.values(r)));
       openWindowWithGet(
           new URL(`${base}/table`), {headers, response}, `User Table`, wparams);
-      /*let userTable =
-          window.open(new URL(`${base}/table`), `User Table`, wparams);
-      openWindowWithPost(new URL(`${base}/table`), {headers, response});*/
     },
     importCSV: function(e) {
       Papa.parse(e.target.files[0], {
@@ -318,8 +298,8 @@ const app = new Vue({
       this.importedCSVFile.forEach((e, i) => {
         this.keyindex = index;
         if (i) {
-          this.multiqueryRaw =
-              this.multiqueryRaw.concat(i == 1 ? '' : ', ', e[index]);
+          this.str_multiquery =
+              this.str_multiquery.concat(i == 1 ? '' : ', ', e[index]);
           this.idToRowMap[e[index]] = i;
         }
       });
