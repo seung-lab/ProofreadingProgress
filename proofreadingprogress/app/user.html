@@ -87,7 +87,8 @@
         </table>
         <button @click="viewResults" :disabled="!response.length" class="btn btn-primary">View Edit Table</button>
         <button @click="exportCSV" :disabled="!response.length" class="btn btn-primary">Export CSV</button>
-        <button @click="mergeCSV" :disabled="!response.length" class="btn btn-primary">Merge CSV</button>
+        <button @click="mergeCSV" :disabled="!response.length || !importedCSVFile.length" class="btn btn-primary">Merge
+            CSV</button>
         <br><br>
         <button @click="viewUsers" :disabled="!userList.length" class="btn btn-primary">View User Table</button>
         <button @click="exportUserCSV" :disabled="!userCSV.length" class="btn btn-primary">Export CSV</button>

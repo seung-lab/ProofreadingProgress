@@ -109,7 +109,7 @@ def apiRequest(args):
     nolineage = {}
     
     if aggregate:
-        rqueries = removeInvalidRootIds(aggregate.split())
+        rqueries = removeInvalidRootIds(aggregate.split(","))
         fullURL = f"{dataset}tabular_change_log_many{params}"
         lineURL = f"{dataset}lineage_graph_multiple"
         results = {}

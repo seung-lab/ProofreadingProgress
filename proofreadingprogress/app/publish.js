@@ -1,5 +1,6 @@
 const base = `${window.location.origin}/api/v1`;
 const params = (new URL(document.location)).searchParams;
+const auto_rootid = params.get('rootid');
 const wparams = `location=no,toolbar=no,menubar=no,width=620,left=0,top=0`;
 const fly_v31 =
     `https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/`;
@@ -13,7 +14,7 @@ const app = new Vue({
     dataset: fly_v31,
     doi: '',
     pname: '',
-    str_rootids: '',
+    str_rootids: auto_rootid || '',
     // OUTPUT
     response: [],
     headers: [],
@@ -132,10 +133,12 @@ const app = new Vue({
     importCol: function(index) {
       this.importedCSVFile.forEach((e, i) => {
         this.keyindex = index;
+        // Ignore first row (header)
         if (i) {
-          this.str_rootids =
-              this.str_rootids.concat(i == 1 ? '' : ', ', e[index]);
-          this.idToRowMap[e[index]] = i;
+          let rid = e[index];
+          if (rid[0] == '\'' && rid.length > 1) rid = rid.slice(1);
+          this.str_rootids = this.str_rootids.concat(i == 1 ? '' : ', ', rid);
+          this.idToRowMap[rid] = i;
         }
       });
     }

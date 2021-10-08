@@ -239,8 +239,8 @@ const app = new Vue({
       let headers = JSON.stringify(this.headers);
       let response = JSON.stringify(this.response);
       openWindowWithGet(
-          new URL(`${base}/table`), {headers, response}, `Edits Table`,
-          wparams);
+          new URL(`${base}/table`), {headers, response, select: true},
+          `Edits Table`, wparams);
     },
     mergeCSV: function() {
       const filename = `${this.importedCSVName.name}_merged.csv`;
@@ -297,10 +297,13 @@ const app = new Vue({
     importCol: function(index) {
       this.importedCSVFile.forEach((e, i) => {
         this.keyindex = index;
+        // Ignore first row (header)
         if (i) {
+          let rid = e[index];
+          if (rid[0] == '\'' && rid.length > 1) rid = rid.slice(1);
           this.str_multiquery =
-              this.str_multiquery.concat(i == 1 ? '' : ', ', e[index]);
-          this.idToRowMap[e[index]] = i;
+              this.str_multiquery.concat(i == 1 ? '' : ', ', rid);
+          this.idToRowMap[rid] = i;
         }
       });
     }

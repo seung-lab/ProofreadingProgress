@@ -38,7 +38,7 @@
             <tr>
                 <td align="right"><label for="query">Root Ids: </label></td>
                 <td align="left">
-                    <textarea v-model="multiqueryRaw" style="resize: both; width: 100%;"
+                    <textarea v-model="str_rootids" style="resize: both; width: 100%;"
                         v-bind:class="validRoots"></textarea>
                 </td>
                 <td align="left">
@@ -80,12 +80,12 @@
                         class="btn btn-primary">{{col}}</button>
                 </td>
             </tr>
-            <tr v-show='response.length !== 0'>
+            <!--<tr v-show='response.length !== 0'>
                 <td align="right"><label for="query">Failed: </label></td>
                 <td align="left">
                     <textarea v-model="failed"></textarea>
                 </td>
-            </tr>
+            </tr>-->
         </table>
         <table class="table table-bordered" v-show="response.length">
             <thead>

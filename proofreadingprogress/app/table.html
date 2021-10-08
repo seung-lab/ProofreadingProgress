@@ -36,14 +36,24 @@
 
 <body>
     <div id="app">
+        <button @click="publish" :disabled="!selected.length" class="btn btn-primary"
+            v-show="supportSelect">Publish</button>
         <table class="table table-bordered" v-show="response.length">
             <thead>
                 <tr>
+                    <th v-show="supportSelect">
+                        <!--<label for="selectall">Select</label>-->
+                        <input name="selectall" type="checkbox" v-model="selectAll">
+                        <!--v-model.boolean="query.historical"-->
+                    </th>
                     <th v-for="header in headers">{{header}}</th>
                 </tr>
             </thead>
             <tbody>
                 <tr v-for="row in response">
+                    <td v-show="supportSelect"><input type="checkbox" v-model="selected" :value="row[0]" number>
+                    </td>
+                    <!--v-model.boolean="query.historical"-->
                     <td v-for="cell in row">{{cell}}</td>
                 </tr>
             </tbody>
