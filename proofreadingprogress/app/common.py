@@ -1,6 +1,8 @@
-from proofreadingprogress.app.sql import connect_db, publishedDict, isPublished
+from networkx.algorithms.dag import ancestors
+from proofreadingprogress.app.sql import connect_db, publishRootIds, publishedDict, tableDump, create_table, isPublished
 from flask import request, make_response, g
 from flask import current_app, send_from_directory
+import re
 import json
 import time
 import requests
@@ -13,6 +15,7 @@ __api_versions__ = [0]
 auth_token_file = open(os.path.join(os.path.expanduser("~"), ".cloudvolume/secrets/chunkedgraph-secret.json"))
 auth_token_json = json.loads(auth_token_file.read())
 auth_token = auth_token_json["token"]
+#retrieved_token = g.get('auth_token', auth_token )
 engine = connect_db()
 
 # -------------------------------
@@ -24,6 +27,9 @@ def query():
 
 def user():
     return send_from_directory('.', 'user.html')
+
+def publish():
+    return send_from_directory('.', 'publish.html')
 
 def table():
     return send_from_directory('.', 'table.html')
@@ -92,7 +98,7 @@ def unhandled_exception(e):
 # ------ Applications
 # -------------------
 def apiRequest(args):
-    auth_header = {"Authorization": f"Bearer {auth_token = flask.g.get('auth_token', auth_token )}"}
+    auth_header = {"Authorization": f"Bearer {auth_token}"}
     isLineage = args.get('lineage', 'false') == "true"
     aggregate = args.get('queries')
     query = args.get('query')
@@ -103,7 +109,7 @@ def apiRequest(args):
     nolineage = {}
     
     if aggregate:
-        rqueries = aggregate.split()
+        rqueries = removeInvalidRootIds(aggregate.split(","))
         fullURL = f"{dataset}tabular_change_log_many{params}"
         lineURL = f"{dataset}lineage_graph_multiple"
         results = {}
@@ -127,18 +133,11 @@ def apiRequest(args):
                 except:
                    nolineage.update(dict.fromkeys(batch, True))
         
-        with engine.connect() as conn:
-            pubDict = publishedDict(conn, rqueries)
         graph = nx.compose_all(graphs) if len(graphs) > 0 else None
         for key in results.keys():
             try:
                 dataframe = pd.DataFrame.from_dict(json.loads(results[key]))
-                jsonData = {
-                    'key': key,
-                    'edits': json.loads(dataframe.to_json(orient='records', date_format='iso')),
-                    'lineage' : list(nx.ancestors(graph, int(key))) if graph != None else list(),
-                    'published': pubDict.get(int(key), False)
-                }
+                jsonData = processToJson(key, dataframe, graph)
                 reqs.append(jsonData)
             except:
                 print("error")
@@ -159,16 +158,9 @@ def apiRequest(args):
                 nolineage = nolineage[query] = True
 
         dataframe = pd.read_json(r.content, 'columns')
-        conn = engine.connect()
-        jsonData = {
-            'key': query,
-            'edits': json.loads(dataframe.to_json(orient='records', date_format='iso')),
-            'lineage' : list(nx.ancestors(graph, int(query))) if graph != None else list(),
-            'published': isPublished(conn, int(query))
-        }
-        conn.close()
+        jsonData = processToJson(query, dataframe, graph)
         reqs.append(jsonData)
-        csv = dataframe.to_csv()
+    csv = dataframe.to_csv()
         
     content = {
         'json': reqs,
@@ -177,3 +169,81 @@ def apiRequest(args):
         'errorgraph': nolineage
     }
     return content
+
+def processToJson(query, dataframe, graph=None):
+        with engine.connect() as conn:
+            published = []
+            if graph != None:
+                ancestors = list(nx.ancestors(graph, int(query)))
+                existing = publishedDict(conn, ancestors)
+                published = []
+                for i in ancestors:
+                    if (existing.get(int(i)) == None):
+                        published.append(i)
+
+            return {
+                'key': query,
+                'edits': json.loads(dataframe.to_json(orient='records', date_format='iso')),
+                'lineage' : len(published) > 0,
+                'published': isPublished(conn, int(query))
+            }
+
+def publish_neurons(args):
+    auth_header = {"Authorization": f"Bearer {auth_token}"}
+    mustVerify = args.get('verify', 'false') == "true"
+    paperName = validPaper(args.get('pname', ''))
+    doi = validDOI(args.get('doi', ''))
+    aggregate = args.get('queries')
+    #Bad Examples
+    #paperName = validPaper('10.1101/2020.08.30.274225;')
+    #doi = validDOI("10.1101/2020.08.30.274225;'")
+    #aggregate = '32489ruiuiju823rq'
+    dataset = args.get('dataset')
+    rqueries = removeInvalidRootIds(aggregate.split())
+    
+    engine = connect_db(True)
+    try:
+        user = g.auth_user['id']
+    except:
+        user = 0
+    with engine.connect() as conn:
+        #create_table(conn)
+        #testInit(conn)
+        existing = publishedDict(conn, rqueries)
+        unpublished = []
+        for i in rqueries:
+            if (existing.get(int(i)) == None):
+                unpublished.append(i)
+            else:
+                existing[int(i)]['exist'] = True
+
+        if (len(unpublished)>0):
+            publishRootIds(conn, dataset, unpublished, doi, paperName, user)
+            existing.update(publishedDict(conn, unpublished))
+    
+    return existing
+
+def removeInvalidRootIds(ids):
+    valid = []
+    for id in ids:
+        try:
+            int(id)
+            valid.append(id)
+        except:
+            pass
+    return valid
+
+def validDOI(doi):
+    valid = not len(doi) or re.match('^10.\d{4,9}[-._;()/:A-Z0-9]+$', doi)
+    return doi if valid else ''
+
+def validPaper(pname): 
+    valid = not len(pname) or re.match('^[\w\-\s]+$', pname)
+    return pname if valid else ''
+
+def publishRequest(args):
+    return pd.DataFrame.from_dict(publish_neurons(args), orient='index').to_html()
+
+def publishDump():
+    with engine.connect() as conn:
+        return tableDump(conn).to_html()

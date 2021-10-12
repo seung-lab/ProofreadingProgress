@@ -14,35 +14,32 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.js"
         integrity="sha512-/McISOEKVzVvgu12/1Hk8dSrbKBShnKn79/R50ysl5qWR1zgj347kOT8LJJvInxHDSPmiBG9vg5AhMx6rcELJg=="
         crossorigin="anonymous"></script>
-    <style>
-        div.vue-tags-input {
-            max-width: 1000px !important;
-            width: 750px;
-        }
-
-        textarea {
-            width: 1000px;
-        }
-
-        td.major {
-            background-color: gold;
-        }
-
-        .btn {
-            margin-left: 10px;
-        }
-    </style>
 </head>
 
 <body>
     <div id="app">
         <table>
             <tr>
-                <td align="right"><label for="query">Query: </label></td>
+                <td align="right"><label for="query">Dataset: </label></td>
                 <td align="left">
-                    <!--<vue-tags-input v-model="tag" placeholder="Add Root Id" :validation="numval"
-                                                :tags="multiquery" @tags-changed="newTags => multiquery = newTags" />-->
-                    <textarea v-model="str_multiquery" v-bind:class="validRoots"></textarea>
+                    <input type="text" v-model="dataset" name="custom dataset" :disabled="customDataset">
+                </td>
+                <td align="left">
+                    <select v-model="dataset">
+                        <option value="https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/">
+                            Production</option>
+                        <option value="https://minnie.microns-daf.com/segmentation/api/v1/table/fly_training_v2/">
+                            Testing</option>
+                        <option disabled value="">Sandbox</option>
+                        <!--<option value="">Custom</option>-->
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td align="right"><label for="query">Root Ids: </label></td>
+                <td align="left">
+                    <textarea v-model="str_rootids" style="resize: both; width: 100%;"
+                        v-bind:class="validRoots"></textarea>
                 </td>
                 <td align="left">
                     <button class="btn btn-primary" type="button" @click="apiRequest" :disabled="!isReady">
@@ -54,23 +51,28 @@
                 </td>
             </tr>
             <tr>
+                <td align="right"><label for="query">DOI: </label></td>
+                <td align="left">
+                    <input type="text" v-model="doi" v-bind:class="validDOI" name="Digital Object Identifier">
+                </td>
+            </tr>
+            <tr>
+                <td align="right"><label for="query">Paper Name: </label></td>
+                <td align="left">
+                    <input type="text" v-model="pname" name="Paper Name" v-bind:class="validTitle">
+                </td>
+            </tr>
+            <!--<tr>
                 <td></td>
                 <td align="left">
-                    <label for="historical">Show related root ids: </label>
-                    <input name="historical" type="checkbox" v-model.boolean="query.historical">
+                    <label for="verify">Verify Ids: </label>
+                    <input name="verify" type="checkbox" v-model.boolean="verify">
                     <label for="filtered">Filter extra edits: </label>
                     <input name="filtered" type="checkbox" v-model.boolean="query.filtered">
                     <label for="lineage">Search Predecessors: </label>
                     <input name="lineage" type="checkbox" v-model.boolean="query.lineage">
-                    <select v-model="dataset">
-                        <option value="https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/">
-                            Production</option>
-                        <option value="https://minnie.microns-daf.com/segmentation/api/v1/table/fly_training_v2/">
-                            Testing</option>
-                        <option disabled value="">Sandbox</option>
-                    </select>
                 </td>
-            </tr>
+            </tr>-->
             <tr v-show='colChoices.length !== 0'>
                 <td align='right'><label>Csv Column: </label></td>
                 <td align='left'>
@@ -78,22 +80,27 @@
                         class="btn btn-primary">{{col}}</button>
                 </td>
             </tr>
-            <tr v-show='response.length !== 0'>
+            <!--<tr v-show='response.length !== 0'>
                 <td align="right"><label for="query">Failed: </label></td>
                 <td align="left">
                     <textarea v-model="failed"></textarea>
                 </td>
-            </tr>
+            </tr>-->
         </table>
-        <button @click="viewResults" :disabled="!response.length" class="btn btn-primary">View Edit Table</button>
-        <button @click="exportCSV" :disabled="!response.length" class="btn btn-primary">Export CSV</button>
-        <button @click="mergeCSV" :disabled="!response.length || !importedCSVFile.length" class="btn btn-primary">Merge
-            CSV</button>
-        <br><br>
-        <button @click="viewUsers" :disabled="!userList.length" class="btn btn-primary">View User Table</button>
-        <button @click="exportUserCSV" :disabled="!userCSV.length" class="btn btn-primary">Export CSV</button>
+        <table class="table table-bordered" v-show="response.length">
+            <thead>
+                <tr>
+                    <th v-for="header in headers">{{header}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="row in response">
+                    <td v-for="key in Object.keys(row)">{{row[key]}}</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
-    <script src="query.js"></script>
+    <script src="publish.js"></script>
 </body>
 
 </html>
