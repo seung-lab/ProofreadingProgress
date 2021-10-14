@@ -1,5 +1,12 @@
 from networkx.algorithms.dag import ancestors
-from proofreadingprogress.app.sql import connect_db, publishRootIds, publishedDict, tableDump, create_table, isPublished
+from proofreadingprogress.app.sql import (
+    connect_db,
+    publishRootIds,
+    publishedDict,
+    tableDump,
+    create_table,
+    isPublished,
+)
 from flask import request, make_response, g
 from flask import current_app, send_from_directory
 import re
@@ -11,38 +18,50 @@ import pandas as pd
 import networkx as nx
 
 __api_versions__ = [0]
+__url_prefix__ = os.environ.get("PPROGRESS_URL_PREFIX", "progress")
 
-auth_token_file = open(os.path.join(os.path.expanduser("~"), ".cloudvolume/secrets/chunkedgraph-secret.json"))
+auth_token_file = open(
+    os.path.join(
+        os.path.expanduser("~"), ".cloudvolume/secrets/chunkedgraph-secret.json"
+    )
+)
 auth_token_json = json.loads(auth_token_file.read())
 auth_token = auth_token_json["token"]
-#retrieved_token = g.get('auth_token', auth_token )
+# retrieved_token = g.get('auth_token', auth_token )
 engine = connect_db()
 
 # -------------------------------
 # ------ Access control and index
 # -------------------------------
 
+
 def query():
-    return send_from_directory('.', 'query.html')
+    return send_from_directory(".", "query.html")
+
 
 def user():
-    return send_from_directory('.', 'user.html')
+    return send_from_directory(".", "user.html")
+
 
 def publish():
-    return send_from_directory('.', 'publish.html')
+    return send_from_directory(".", "publish.html")
+
 
 def table():
-    return send_from_directory('.', 'table.html')
+    return send_from_directory(".", "table.html")
+
 
 def getScripts(name):
-    return send_from_directory('.', name)
+    return send_from_directory(".", name)
+
 
 def getStyles(name):
-    return send_from_directory('.', name)
+    return send_from_directory(".", name)
+
 
 def home():
     resp = make_response()
-    resp.headers['Access-Control-Allow-Origin'] = '*'
+    resp.headers["Access-Control-Allow-Origin"] = "*"
     acah = "Origin, X-Requested-With, Content-Type, Accept"
     resp.headers["Access-Control-Allow-Headers"] = acah
     resp.headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS"
@@ -54,6 +73,7 @@ def home():
 # ------ Measurements and Logging
 # -------------------------------
 
+
 def before_request():
     g.request_start_time = time.time()
 
@@ -62,10 +82,16 @@ def after_request(response):
     dt = (time.time() - g.request_start_time) * 1000
 
     url_split = request.url.split("/")
-    current_app.logger.info("%s - %s - %s - %s - %f.3" %
-                            (request.path.split("/")[-1], "1",
-                             "".join([url_split[-2], "/", url_split[-1]]),
-                             str(request.data), dt))
+    current_app.logger.info(
+        "%s - %s - %s - %s - %f.3"
+        % (
+            request.path.split("/")[-1],
+            "1",
+            "".join([url_split[-2], "/", url_split[-1]]),
+            str(request.data),
+            dt,
+        )
+    )
 
     print("Response time: %.3fms" % (dt))
     return response
@@ -75,11 +101,16 @@ def internal_server_error(error):
     dt = (time.time() - g.request_start_time) * 1000
 
     url_split = request.url.split("/")
-    current_app.logger.error("%s - %s - %s - %s - %f.3" %
-                             (request.path.split("/")[-1],
-                              "Server Error: " + error,
-                              "".join([url_split[-2], "/", url_split[-1]]),
-                              str(request.data), dt))
+    current_app.logger.error(
+        "%s - %s - %s - %s - %f.3"
+        % (
+            request.path.split("/")[-1],
+            "Server Error: " + error,
+            "".join([url_split[-2], "/", url_split[-1]]),
+            str(request.data),
+            dt,
+        )
+    )
     return 500
 
 
@@ -87,27 +118,33 @@ def unhandled_exception(e):
     dt = (time.time() - g.request_start_time) * 1000
 
     url_split = request.url.split("/")
-    current_app.logger.error("%s - %s - %s - %s - %f.3" %
-                             (request.path.split("/")[-1],
-                              "Exception: " + str(e),
-                              "".join([url_split[-2], "/", url_split[-1]]),
-                              str(request.data), dt))
+    current_app.logger.error(
+        "%s - %s - %s - %s - %f.3"
+        % (
+            request.path.split("/")[-1],
+            "Exception: " + str(e),
+            "".join([url_split[-2], "/", url_split[-1]]),
+            str(request.data),
+            dt,
+        )
+    )
     return 500
+
 
 # -------------------
 # ------ Applications
 # -------------------
 def apiRequest(args):
     auth_header = {"Authorization": f"Bearer {auth_token}"}
-    isLineage = args.get('lineage', 'false') == "true"
-    aggregate = args.get('queries')
-    query = args.get('query')
-    dataset = args.get('dataset')
-    params = args.get('params')
+    isLineage = args.get("lineage", "false") == "true"
+    aggregate = args.get("queries")
+    query = args.get("query")
+    dataset = args.get("dataset")
+    params = args.get("params")
     reqs = []
     error = []
     nolineage = {}
-    
+
     if aggregate:
         rqueries = removeInvalidRootIds(aggregate.split(","))
         fullURL = f"{dataset}tabular_change_log_many{params}"
@@ -115,7 +152,7 @@ def apiRequest(args):
         results = {}
         graphs = []
         bsize = 10
-        bqueries = [rqueries[i:i + bsize] for i in range(0, len(rqueries), bsize)]
+        bqueries = [rqueries[i : i + bsize] for i in range(0, len(rqueries), bsize)]
 
         for batch in bqueries:
             jbatch = json.dumps({"root_ids": batch})
@@ -124,15 +161,14 @@ def apiRequest(args):
                 results.update(json.loads(r.content))
             except:
                 error = error + batch
-                
-            if (isLineage):
+
+            if isLineage:
                 try:
-                    g = requests.post(lineURL, headers=auth_header, 
-                            data=jbatch)
+                    g = requests.post(lineURL, headers=auth_header, data=jbatch)
                     graphs.append(nx.node_link_graph(json.loads(g.content)))
                 except:
-                   nolineage.update(dict.fromkeys(batch, True))
-        
+                    nolineage.update(dict.fromkeys(batch, True))
+
         graph = nx.compose_all(graphs) if len(graphs) > 0 else None
         for key in results.keys():
             try:
@@ -148,7 +184,7 @@ def apiRequest(args):
             results = json.loads(r.content)
         except:
             error = [query]
-        if (isLineage):
+        if isLineage:
             lineURL = f"{dataset}root/{query}/lineage_graph"
             g = requests.get(lineURL, headers=auth_header)
             try:
@@ -157,71 +193,74 @@ def apiRequest(args):
                 graph = None
                 nolineage = nolineage[query] = True
 
-        dataframe = pd.read_json(r.content, 'columns')
+        dataframe = pd.read_json(r.content, "columns")
         jsonData = processToJson(query, dataframe, graph)
         reqs.append(jsonData)
     csv = dataframe.to_csv()
-        
+
     content = {
-        'json': reqs,
-        'csv': '' if aggregate else csv,
-        'error': error,
-        'errorgraph': nolineage
+        "json": reqs,
+        "csv": "" if aggregate else csv,
+        "error": error,
+        "errorgraph": nolineage,
     }
     return content
 
-def processToJson(query, dataframe, graph=None):
-        with engine.connect() as conn:
-            published = []
-            if graph != None:
-                ancestors = list(nx.ancestors(graph, int(query)))
-                existing = publishedDict(conn, ancestors)
-                published = []
-                for i in ancestors:
-                    if (existing.get(int(i)) == None):
-                        published.append(i)
 
-            return {
-                'key': query,
-                'edits': json.loads(dataframe.to_json(orient='records', date_format='iso')),
-                'lineage' : len(published) > 0,
-                'published': isPublished(conn, int(query))
-            }
+def processToJson(query, dataframe, graph=None):
+    with engine.connect() as conn:
+        published = []
+        if graph != None:
+            ancestors = list(nx.ancestors(graph, int(query)))
+            existing = publishedDict(conn, ancestors)
+            published = []
+            for i in ancestors:
+                if existing.get(int(i)) == None:
+                    published.append(i)
+
+        return {
+            "key": query,
+            "edits": json.loads(dataframe.to_json(orient="records", date_format="iso")),
+            "lineage": len(published) > 0,
+            "published": isPublished(conn, int(query)),
+        }
+
 
 def publish_neurons(args):
     auth_header = {"Authorization": f"Bearer {auth_token}"}
-    mustVerify = args.get('verify', 'false') == "true"
-    paperName = validPaper(args.get('pname', ''))
-    doi = validDOI(args.get('doi', ''))
-    aggregate = args.get('queries')
-    #Bad Examples
-    #paperName = validPaper('10.1101/2020.08.30.274225;')
-    #doi = validDOI("10.1101/2020.08.30.274225;'")
-    #aggregate = '32489ruiuiju823rq'
-    dataset = args.get('dataset')
+    mustVerify = args.get("verify", "false") == "true"
+    paperName = validPaper(args.get("pname", ""))
+    doi = validDOI(args.get("doi", ""))
+    aggregate = args.get("queries")
+    # Bad Examples
+    # paperName = validPaper('10.1101/2020.08.30.274225;')
+    # doi = validDOI("10.1101/2020.08.30.274225;'")
+    # aggregate = '32489ruiuiju823rq'
+    dataset = args.get("dataset")
     rqueries = removeInvalidRootIds(aggregate.split())
-    
+
     engine = connect_db(True)
     try:
-        user = g.auth_user['id']
+        user = g.auth_user["id"]
     except:
         user = 0
     with engine.connect() as conn:
-        #create_table(conn)
-        #testInit(conn)
+        # create_table(conn)
+        # testInit(conn)
         existing = publishedDict(conn, rqueries)
         unpublished = []
         for i in rqueries:
-            if (existing.get(int(i)) == None):
+            if existing.get(int(i)) == None:
                 unpublished.append(i)
             else:
-                existing[int(i)]['exist'] = True
+                existing[int(i)]["exist"] = True
 
-        if (len(unpublished)>0):
+        if len(unpublished) > 0:
             publishRootIds(conn, dataset, unpublished, doi, paperName, user)
             existing.update(publishedDict(conn, unpublished))
-    
+
     return existing
+
 
 def removeInvalidRootIds(ids):
     valid = []
@@ -233,16 +272,20 @@ def removeInvalidRootIds(ids):
             pass
     return valid
 
-def validDOI(doi):
-    valid = not len(doi) or re.match('^10.\d{4,9}[-._;()/:A-Z0-9]+$', doi)
-    return doi if valid else ''
 
-def validPaper(pname): 
-    valid = not len(pname) or re.match('^[\w\-\s]+$', pname)
-    return pname if valid else ''
+def validDOI(doi):
+    valid = not len(doi) or re.match("^10.\d{4,9}[-._;()/:A-Z0-9]+$", doi)
+    return doi if valid else ""
+
+
+def validPaper(pname):
+    valid = not len(pname) or re.match("^[\w\-\s]+$", pname)
+    return pname if valid else ""
+
 
 def publishRequest(args):
-    return pd.DataFrame.from_dict(publish_neurons(args), orient='index').to_html()
+    return pd.DataFrame.from_dict(publish_neurons(args), orient="index").to_html()
+
 
 def publishDump():
     with engine.connect() as conn:

@@ -5,7 +5,9 @@ from middle_auth_client import auth_required
 from proofreadingprogress.app import common
 import pandas as pd
 
-bp = Blueprint("proofreadingprogress_v1", __name__, url_prefix="/api/v1")
+bp = Blueprint(
+    "proofreadingprogress_v1", __name__, url_prefix=f"{common.__url_prefix__}/api/v1"
+)
 
 # -------------------------------
 # ------ Access control and index
@@ -22,11 +24,13 @@ def query():
 def user():
     return common.user()
 
+
 @bp.route("/publish", methods=["GET"])
 def publish():
     return common.publish()
 
-@bp.route('/table', methods=['GET', "POST"])
+
+@bp.route("/table", methods=["GET", "POST"])
 def table():
     return common.table()
 
@@ -81,14 +85,17 @@ def unhandled_exception(e):
 def pass_through():
     return common.apiRequest(request.args)
 
-@bp.route('/pub/', methods=['GET'])
+
+@bp.route("/pub/", methods=["GET"])
 def publish_neurons():
     return common.publish_neurons(request.args)
 
-@bp.route('/pubreq/', methods=['GET'])
+
+@bp.route("/pubreq/", methods=["GET"])
 def publish_request():
     return common.publishRequest(request.args)
 
-@bp.route('/pubdmp/', methods=['GET'])
+
+@bp.route("/pubdmp/", methods=["GET"])
 def publish_dump():
     return common.publishDump()
