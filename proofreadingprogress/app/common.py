@@ -7,7 +7,7 @@ from proofreadingprogress.app.sql import (
     create_table,
     isPublished,
 )
-from flask import request, make_response, g
+from flask import request, make_response, g, Blueprint
 from flask import current_app, send_from_directory
 import re
 import json
