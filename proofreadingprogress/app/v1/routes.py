@@ -14,7 +14,12 @@ bp = Blueprint(
 # -------------------------------
 
 
-@bp.route("/", methods=["GET"])
+@bp.route("/")
+@bp.route("/index")
+def index():
+    return common.index()
+
+
 @bp.route("/query", methods=["GET"])
 def query():
     return common.query()

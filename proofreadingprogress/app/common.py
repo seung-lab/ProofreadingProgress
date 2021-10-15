@@ -34,6 +34,16 @@ engine = connect_db()
 # ------ Access control and index
 # -------------------------------
 
+bp = Blueprint("proofreadingprogress_v1", __name__, url_prefix=f"{__url_prefix__}")
+
+
+@bp.route("/")
+@bp.route("/index")
+def index():
+    from .. import __version__
+
+    return f"ProofreadingProgress v{__version__}"
+
 
 def query():
     return send_from_directory(".", "query.html")
