@@ -20,25 +20,21 @@ import networkx as nx
 __api_versions__ = [0]
 __url_prefix__ = os.environ.get("PPROGRESS_URL_PREFIX", "progress")
 
-auth_token_file = open(
-    os.path.join(
-        os.path.expanduser("~"), ".cloudvolume/secrets/chunkedgraph-secret.json"
-    )
-)
-auth_token_json = json.loads(auth_token_file.read())
-auth_token = auth_token_json["token"]
+# auth_token_file = open(
+#     os.path.join(
+#         os.path.expanduser("~"), ".cloudvolume/secrets/chunkedgraph-secret.json"
+#     )
+# )
+# auth_token_json = json.loads(auth_token_file.read())
+# auth_token = auth_token_json["token"]
 # retrieved_token = g.get('auth_token', auth_token )
-engine = connect_db()
+# engine = connect_db()
 
 # -------------------------------
 # ------ Access control and index
 # -------------------------------
 
-bp = Blueprint("proofreadingprogress", __name__, url_prefix=f"{__url_prefix__}")
 
-
-@bp.route("/")
-@bp.route("/index")
 def index():
     from .. import __version__
 
@@ -145,7 +141,7 @@ def unhandled_exception(e):
 # ------ Applications
 # -------------------
 def apiRequest(args):
-    auth_header = {"Authorization": f"Bearer {auth_token}"}
+    auth_header = {"Authorization": f"Bearer {current_app.config['AUTH_TOKEN']}"}
     isLineage = args.get("lineage", "false") == "true"
     aggregate = args.get("queries")
     query = args.get("query")
@@ -237,7 +233,7 @@ def processToJson(query, dataframe, graph=None):
 
 
 def publish_neurons(args):
-    auth_header = {"Authorization": f"Bearer {auth_token}"}
+    auth_header = {"Authorization": f"Bearer {current_app.config['AUTH_TOKEN']}"}
     mustVerify = args.get("verify", "false") == "true"
     paperName = validPaper(args.get("pname", ""))
     doi = validDOI(args.get("doi", ""))

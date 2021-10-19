@@ -36,7 +36,7 @@ def create_app(test_config=None):
 
     # app.register_blueprint(api_legacy)
     app.register_blueprint(api_v1)
-    app.url_map.strict_slashes = False
+    # app.url_map.strict_slashes = False
 
     return app
 
