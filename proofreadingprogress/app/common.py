@@ -214,23 +214,27 @@ def apiRequest(args):
 
 
 def processToJson(query, dataframe, graph=None):
-    with engine.connect() as conn:
-        published = []
-        if graph != None:
-            ancestors = list(nx.ancestors(graph, int(query)))
-            existing = publishedDict(conn, ancestors)
-            published = []
-            for i in ancestors:
-                if existing.get(int(i)) == None:
-                    published.append(i)
+    pubdict = None
+    published = []
+    try:
+        with engine.connect() as conn:
+            if graph != None:
+                ancestors = list(nx.ancestors(graph, int(query)))
+                existing = publishedDict(conn, ancestors)
+                published = []
+                for i in ancestors:
+                    if (existing.get(int(i)) == None):
+                        published.append(i)
+            pubdict = isPublished(conn, int(query))                        
+    except:
+        pass
 
-        return {
-            "key": query,
-            "edits": json.loads(dataframe.to_json(orient="records", date_format="iso")),
-            "lineage": len(published) > 0,
-            "published": isPublished(conn, int(query)),
-        }
-
+    return {
+        'key': query,
+        'edits': json.loads(dataframe.to_json(orient='records', date_format='iso')),
+        'lineage' : len(published) > 0,
+        'published': pubdict
+    }
 
 def publish_neurons(args):
     auth_header = {"Authorization": f"Bearer {current_app.config['AUTH_TOKEN']}"}
