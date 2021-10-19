@@ -21,36 +21,43 @@ def index():
 
 
 @bp.route("/query", methods=["GET"])
+@auth_required
 def query():
     return common.query()
 
 
 @bp.route("/user", methods=["GET"])
+@auth_required
 def user():
     return common.user()
 
 
 @bp.route("/publish", methods=["GET"])
+@auth_required
 def publish():
     return common.publish()
 
 
 @bp.route("/table", methods=["GET", "POST"])
+@auth_required
 def table():
     return common.table()
 
 
 @bp.route("/<name>.js", methods=["GET"])
+@auth_required
 def scripts(name):
     return common.getScripts(name + ".js")
 
 
 @bp.route("/<name>.css", methods=["GET"])
+@auth_required
 def style(name):
     return common.getStyles(name + ".css")
 
 
 @bp.route
+@auth_required
 def home():
     return common.home()
 
@@ -61,7 +68,6 @@ def home():
 
 
 @bp.before_request
-@auth_required
 def before_request():
     return common.before_request()
 
@@ -87,20 +93,24 @@ def unhandled_exception(e):
 
 
 @bp.route("/qry/", methods=["GET"])
+@auth_required
 def pass_through():
     return common.apiRequest(request.args)
 
 
 @bp.route("/pub/", methods=["GET"])
+@auth_required
 def publish_neurons():
     return common.publish_neurons(request.args)
 
 
 @bp.route("/pubreq/", methods=["GET"])
+@auth_required
 def publish_request():
     return common.publishRequest(request.args)
 
 
 @bp.route("/pubdmp/", methods=["GET"])
+@auth_required
 def publish_dump():
     return common.publishDump()
