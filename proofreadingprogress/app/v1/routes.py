@@ -6,7 +6,7 @@ from proofreadingprogress.app import common
 import pandas as pd
 
 bp = Blueprint(
-    "proofreadingprogress_v1", __name__, url_prefix=f"{common.__url_prefix__}/api/v1"
+    "proofreadingprogress_v1", __name__, url_prefix=f"/{common.__url_prefix__}/api/v1"
 )
 
 # -------------------------------
