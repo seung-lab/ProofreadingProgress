@@ -1,0 +1,6 @@
+flask
+flask_cors
+middle-auth-client>=3.8.1
+cloud-volume
+numpy
+pandas
