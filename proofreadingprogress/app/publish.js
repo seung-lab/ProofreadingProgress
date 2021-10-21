@@ -1,4 +1,5 @@
-const base = `${window.location.origin}/api/v1`;
+const base = `${window.location.origin}${
+    document.getElementById('prefix') || ''}/api/v1`;
 const params = (new URL(document.location)).searchParams;
 const auto_rootid = params.get('rootid');
 const wparams = `location=no,toolbar=no,menubar=no,width=620,left=0,top=0`;

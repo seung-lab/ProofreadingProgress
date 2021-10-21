@@ -34,7 +34,7 @@
     </style>
 </head>
 
-<body>
+<body><span id="prefix" style="display: none;">%% prefix %%</span>
     <div id="app">
         <button @click="publish" :disabled="!selected.length" class="btn btn-primary"
             v-show="supportSelect">Publish</button>

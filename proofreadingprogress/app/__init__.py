@@ -25,8 +25,16 @@ class JsonFormatter(jsonlogger.JsonFormatter):
         del log_record["name"]
 
 
+class CustomFlask(Flask):
+    jinja_options = Flask.jinja_options.copy()
+    jinja_options.update(dict(
+        variable_start_string='%%',  # Default is '{{', I'm changing this because Vue.js uses '{{' / '}}'
+        variable_end_string='%%',
+    ))
+
 def create_app(test_config=None):
-    app = Flask(__name__)
+    #app = Flask(__name__)
+    app = CustomFlask(__name__)
     CORS(app, expose_headers="WWW-Authenticate")
 
     configure_app(app)

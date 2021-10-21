@@ -11,20 +11,46 @@
         crossorigin="anonymous"></script>
     <script src="https://unpkg.com/vue"></script>
     <script src="https://unpkg.com/@johmun/vue-tags-input/dist/vue-tags-input.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.js"
+        integrity="sha512-/McISOEKVzVvgu12/1Hk8dSrbKBShnKn79/R50ysl5qWR1zgj347kOT8LJJvInxHDSPmiBG9vg5AhMx6rcELJg=="
+        crossorigin="anonymous"></script>
+    <style>
+        div.vue-tags-input {
+            max-width: 1000px !important;
+            width: 750px;
+        }
+
+        textarea {
+            width: 1000px;
+        }
+
+        td.major {
+            background-color: gold;
+        }
+
+        .btn {
+            margin-left: 10px;
+        }
+    </style>
 </head>
 
-<body>
+<body><span id="prefix" style="display: none;">%% prefix %%</span>
     <div id="app">
         <table>
             <tr>
                 <td align="right"><label for="query">Query: </label></td>
                 <td align="left">
-                    <input type="number" v-model="query.root_id" name="query">
+                    <!--<vue-tags-input v-model="tag" placeholder="Add Root Id" :validation="numval"
+                                                :tags="multiquery" @tags-changed="newTags => multiquery = newTags" />-->
+                    <textarea v-model="str_multiquery" v-bind:class="validRoots"></textarea>
+                </td>
+                <td align="left">
                     <button class="btn btn-primary" type="button" @click="apiRequest" :disabled="!isReady">
                         <span class="spinner-border spinner-border-sm" aria-hidden="true" v-show="loading"></span>
                         {{ status }}
                     </button>
-                    <button @click="exportCSV" :disabled="!response.length" class="btn btn-primary">Export CSV</button>
+                    <button @click="chooseCSV" class="btn btn-primary">Import CSV</button>
+                    <input style="display: none" type="file" id="import" @change="importCSV">
                 </td>
             </tr>
             <tr>
@@ -45,19 +71,27 @@
                     </select>
                 </td>
             </tr>
+            <tr v-show='colChoices.length !== 0'>
+                <td align='right'><label>Csv Column: </label></td>
+                <td align='left'>
+                    <button @click="importCol(c)" v-for="(col, c) in colChoices"
+                        class="btn btn-primary">{{col}}</button>
+                </td>
+            </tr>
+            <tr v-show='response.length !== 0'>
+                <td align="right"><label for="query">Failed: </label></td>
+                <td align="left">
+                    <textarea v-model="failed"></textarea>
+                </td>
+            </tr>
         </table>
-        <table class="table table-bordered" v-show="response.length">
-            <thead>
-                <tr>
-                    <th v-for="header in headers">{{header}}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="row in response">
-                    <td v-for="key in Object.keys(row)">{{row[key]}}</td>
-                </tr>
-            </tbody>
-        </table>
+        <button @click="viewResults" :disabled="!response.length" class="btn btn-primary">View Edit Table</button>
+        <button @click="exportCSV" :disabled="!response.length" class="btn btn-primary">Export CSV</button>
+        <button @click="mergeCSV" :disabled="!response.length || !importedCSVFile.length" class="btn btn-primary">Merge
+            CSV</button>
+        <br><br>
+        <button @click="viewUsers" :disabled="!userList.length" class="btn btn-primary">View User Table</button>
+        <button @click="exportUserCSV" :disabled="!userCSV.length" class="btn btn-primary">Export CSV</button>
     </div>
     <script src="query.js"></script>
 </body>

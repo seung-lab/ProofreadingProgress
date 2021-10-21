@@ -7,7 +7,7 @@ from proofreadingprogress.app.sql import (
     create_table,
     isPublished,
 )
-from flask import request, make_response, g, Blueprint
+from flask import request, make_response, g, Blueprint, render_template
 from flask import current_app, send_from_directory
 import re
 import json
@@ -42,19 +42,19 @@ def index():
 
 
 def query():
-    return send_from_directory(".", "query.html")
+    return render_template("query.html", prefix = __url_prefix__)
 
 
 def user():
-    return send_from_directory(".", "user.html")
+    return render_template("user.html", prefix = __url_prefix__)
 
 
 def publish():
-    return send_from_directory(".", "publish.html")
+    return render_template("publish.html", prefix = __url_prefix__)
 
 
 def table():
-    return send_from_directory(".", "table.html")
+    return render_template("table.html", prefix = __url_prefix__)
 
 
 def getScripts(name):
