@@ -1,7 +1,7 @@
 const usp = new URLSearchParams(window.location.search);
 const params = Object.fromEntries(usp.entries());
-const base = `${window.location.origin}${
-    document.getElementById('prefix') || ''}/api/v1`;
+const base = `${window.location.origin}/${
+    document.getElementById('prefix').innerText || ''}/api/v1`;
 
 function openWindowWithGet(url, data, name = '', params = '') {
   var usp = new URLSearchParams(data);
