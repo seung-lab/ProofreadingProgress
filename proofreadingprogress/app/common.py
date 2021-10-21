@@ -170,8 +170,8 @@ def apiRequest(args):
 
             if isLineage:
                 try:
-                    g = requests.post(lineURL, headers=auth_header, data=jbatch)
-                    graphs.append(nx.node_link_graph(json.loads(g.content)))
+                    response = requests.post(lineURL, headers=auth_header, data=jbatch)
+                    graphs.append(nx.node_link_graph(json.loads(response.content)))
                 except:
                     nolineage.update(dict.fromkeys(batch, True))
 
@@ -192,9 +192,9 @@ def apiRequest(args):
             error = [query]
         if isLineage:
             lineURL = f"{dataset}root/{query}/lineage_graph"
-            g = requests.get(lineURL, headers=auth_header)
+            response = requests.get(lineURL, headers=auth_header)
             try:
-                graph = nx.node_link_graph(json.loads(g.content))
+                graph = nx.node_link_graph(json.loads(response.content))
             except:
                 graph = None
                 nolineage = nolineage[query] = True
