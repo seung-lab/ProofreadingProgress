@@ -42,19 +42,19 @@ def index():
 
 
 def query():
-    return render_template("query.html", prefix = __url_prefix__)
+    return render_template("query.html", prefix=__url_prefix__)
 
 
 def user():
-    return render_template("user.html", prefix = __url_prefix__)
+    return render_template("user.html", prefix=__url_prefix__)
 
 
 def publish():
-    return render_template("publish.html", prefix = __url_prefix__)
+    return render_template("publish.html", prefix=__url_prefix__)
 
 
 def table():
-    return render_template("table.html", prefix = __url_prefix__)
+    return render_template("table.html", prefix=__url_prefix__)
 
 
 def getScripts(name):
@@ -141,7 +141,7 @@ def unhandled_exception(e):
 # ------ Applications
 # -------------------
 def apiRequest(args):
-    auth_header = {"Authorization": f"Bearer {current_app.config['AUTH_TOKEN']}"}
+    auth_header = {"Authorization": f"Bearer {g.auth_token}"}
     isLineage = args.get("lineage", "false") == "true"
     aggregate = args.get("queries")
     query = args.get("query")
@@ -223,21 +223,22 @@ def processToJson(query, dataframe, graph=None):
                 existing = publishedDict(conn, ancestors)
                 published = []
                 for i in ancestors:
-                    if (existing.get(int(i)) == None):
+                    if existing.get(int(i)) == None:
                         published.append(i)
-            pubdict = isPublished(conn, int(query))                        
+            pubdict = isPublished(conn, int(query))
     except:
         pass
 
     return {
-        'key': query,
-        'edits': json.loads(dataframe.to_json(orient='records', date_format='iso')),
-        'lineage' : len(published) > 0,
-        'published': pubdict
+        "key": query,
+        "edits": json.loads(dataframe.to_json(orient="records", date_format="iso")),
+        "lineage": len(published) > 0,
+        "published": pubdict,
     }
 
+
 def publish_neurons(args):
-    auth_header = {"Authorization": f"Bearer {current_app.config['AUTH_TOKEN']}"}
+    auth_header = {"Authorization": f"Bearer {g.auth_token}"}
     mustVerify = args.get("verify", "false") == "true"
     paperName = validPaper(args.get("pname", ""))
     doi = validDOI(args.get("doi", ""))
