@@ -47,7 +47,7 @@ def table():
 @bp.route("/<name>.js", methods=["GET"])
 @auth_required
 def scripts(name):
-    return common.getScripts(name + ".js")
+    return common.getScripts("scripts/" + name + ".js")
 
 
 @bp.route("/<name>.css", methods=["GET"])

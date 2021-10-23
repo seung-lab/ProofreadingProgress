@@ -30,6 +30,9 @@ function openWindowWithPost(url, data) {
   form.submit();
   document.body.removeChild(form);
 }
+function importCSVCheck(id) {
+  return /^ *\d+ *(?:, *\d+ *)*$/gm.test(id) ? id : 0
+};
 
 const app = new Vue({
   el: '#app',
@@ -41,6 +44,7 @@ const app = new Vue({
       filtered: true,
       lineage: true
     },
+    excelcsv: false,
     dataset:
         'https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/',
     str_multiquery: '',
@@ -50,6 +54,7 @@ const app = new Vue({
     headers: [],
     csv: '',
     userCSV: '',
+    ex_csv: '',
     userList: {},
     userHeaders: [],
     // IMPORT
@@ -179,7 +184,6 @@ const app = new Vue({
       this.response = segments.map(seg => {
         let headers = Array.from(seg.keys());
         let row = Array.from(seg.values());
-        row[0] = `'${row[0]}`;  // Adds ' to front of seg id
         seg.set('contributor', []);
 
         let segId = seg.get('segment_ID');
@@ -222,14 +226,20 @@ const app = new Vue({
         }
         return row;
       });
+      this.userList = Array.from(Object.values(userList));
       const csv = [this.headers, ...this.response];
       this.csv = Papa.unparse(csv);
-      this.userList = Array.from(Object.values(userList));
       this.userCSV = Papa.unparse(this.userList);
+
+      const ex_res = this.response.map(row => `'${row[0]}`);
+      const ex_csv = [this.headers, ...ex_res];
+      this.ex_csv = Papa.unparse(ex_csv);
     },
     exportCSV: function() {
       const filename = 'edits.csv';
-      const blob = new Blob([this.csv], {type: 'text/csv;charset=utf-8;'});
+      const blob = new Blob(
+          [this.excelcsv ? this.ex_csv : this.csv],
+          {type: 'text/csv;charset=utf-8;'});
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
@@ -249,7 +259,10 @@ const app = new Vue({
       Papa.parse(this.csv, {
         complete: (results) => {
           results.data.map((row, i) => {
-            const key = i ? this.idToRowMap[row[0].slice(1)] : 0;
+            // const key = importCSVCheck(this.idToRowMap[row[0].slice(1)]);
+            const key = i ? this.idToRowMap[row[0]] : 0;
+            // if (!i) return;
+            // const key = this.idToRowMap[row[0]];
             const firsthalf = mergedCSV[key].slice(0, this.keyindex);
             const secondhalf = this.keyindex < mergedCSV[key].length - 1 ?
                 mergedCSV[key].slice(this.keyindex + 1) :
@@ -298,12 +311,14 @@ const app = new Vue({
     importCol: function(index) {
       this.importedCSVFile.forEach((e, i) => {
         this.keyindex = index;
-        // Ignore first row (header)
-        if (i) {
-          let rid = e[index];
-          if (rid[0] == '\'' && rid.length > 1) rid = rid.slice(1);
-          this.str_multiquery =
-              this.str_multiquery.concat(i == 1 ? '' : ', ', rid);
+        let rid = e[index];
+        // Remove Leading ' on import
+        if (rid[0] == '\'' && rid.length > 1) rid = rid.slice(1);
+        // Remove invalid root_ids
+        rid = importCSVCheck(rid);
+        if (rid) {
+          this.str_multiquery = this.str_multiquery.concat(
+              !this.str_multiquery.length ? '' : ', ', rid);
           this.idToRowMap[rid] = i;
         }
       });
