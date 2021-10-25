@@ -16,6 +16,7 @@ import requests
 import os
 import pandas as pd
 import networkx as nx
+from multiprocessing import Pool
 
 __api_versions__ = [0]
 __url_prefix__ = os.environ.get("PPROGRESS_URL_PREFIX", "progress")
@@ -136,6 +137,32 @@ def unhandled_exception(e):
     )
     return 500
 
+def serverRequest(args):
+    batch = args[0]
+    fullURL = args[1]
+    lineURL = args[2]
+    auth_header = args[3]
+    isLineage = args[4]
+    results = {}
+    graphs = []
+    error = []
+    nolineage = {}
+    jbatch = json.dumps({"root_ids": batch})
+    try:
+        r = requests.get(fullURL, headers=auth_header, data=jbatch)
+        results.update(json.loads(r.content))
+    except:
+        error = error + batch
+
+    if isLineage:
+        try:
+            response = requests.post(lineURL, headers=auth_header, data=jbatch)
+            graphs.append(nx.node_link_graph(json.loads(response.content)))
+        except:
+            nolineage.update(dict.fromkeys(batch, True))
+
+    return {"results": results, "graphs": graphs, "error": error, "nolineage": nolineage}
+
 
 # -------------------
 # ------ Applications
@@ -158,22 +185,20 @@ def apiRequest(args):
         results = {}
         graphs = []
         bsize = 10
-        bqueries = [rqueries[i : i + bsize] for i in range(0, len(rqueries), bsize)]
+        bqueries = [(rqueries[i : i + bsize], fullURL, lineURL, auth_header, isLineage) for i in range(0, len(rqueries), bsize)]
+        
+        p = Pool()
+        raw = p.imap(serverRequest, bqueries)
+        p.close()
+        p.join()
 
-        for batch in bqueries:
-            jbatch = json.dumps({"root_ids": batch})
-            try:
-                r = requests.get(fullURL, headers=auth_header, data=jbatch)
-                results.update(json.loads(r.content))
-            except:
-                error = error + batch
+        for batch in raw:
+            results.update(batch["results"])
+            error += batch["error"]
 
             if isLineage:
-                try:
-                    response = requests.post(lineURL, headers=auth_header, data=jbatch)
-                    graphs.append(nx.node_link_graph(json.loads(response.content)))
-                except:
-                    nolineage.update(dict.fromkeys(batch, True))
+                graphs += batch["graphs"]
+                nolineage.update(batch["nolineage"])
 
         graph = nx.compose_all(graphs) if len(graphs) > 0 else None
         for key in results.keys():
