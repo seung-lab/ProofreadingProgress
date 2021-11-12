@@ -16,7 +16,9 @@ import requests
 import os
 import pandas as pd
 import networkx as nx
-from multiprocessing import Pool
+from multiprocessing.pool import ThreadPool as Pool
+from caveclient import CAVEclient
+import numpy as np
 
 __api_versions__ = [0]
 __url_prefix__ = os.environ.get("PPROGRESS_URL_PREFIX", "progress")
@@ -137,33 +139,6 @@ def unhandled_exception(e):
     )
     return 500
 
-def serverRequest(args):
-    batch = args[0]
-    fullURL = args[1]
-    lineURL = args[2]
-    auth_header = args[3]
-    isLineage = args[4]
-    results = {}
-    graphs = []
-    error = []
-    nolineage = {}
-    jbatch = json.dumps({"root_ids": batch})
-    try:
-        r = requests.get(fullURL, headers=auth_header, data=jbatch)
-        results.update(json.loads(r.content))
-    except:
-        error = error + batch
-
-    if isLineage:
-        try:
-            response = requests.post(lineURL, headers=auth_header, data=jbatch)
-            graphs.append(nx.node_link_graph(json.loads(response.content)))
-        except:
-            nolineage.update(dict.fromkeys(batch, True))
-
-    return {"results": results, "graphs": graphs, "error": error, "nolineage": nolineage}
-
-
 # -------------------
 # ------ Applications
 # -------------------
@@ -186,7 +161,6 @@ def apiRequest(args):
         graphs = []
         bsize = 10
         bqueries = [(rqueries[i : i + bsize], fullURL, lineURL, auth_header, isLineage) for i in range(0, len(rqueries), bsize)]
-        
         p = Pool()
         raw = p.imap(serverRequest, bqueries)
         p.close()
@@ -237,6 +211,92 @@ def apiRequest(args):
     }
     return content
 
+def cave_test(r):
+    reqs = []
+    args = r.args
+    raw = json.loads(request.data)
+    datastack = {
+        "https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/": "flywire_fafb_production",
+        "https://minnie.microns-daf.com/segmentation/api/v1/table/fly_training_v2/": "minnie65_phase3_v0",
+        "default": "flywire_fafb_production",
+    }
+    single = args.get("query")
+    isLineage = args.get("lineage", "false") == "true"
+    #use user token, instead of local token
+    client = CAVEclient(datastack[args.get("dataset", "default")])
+    #queries = convertValidRootIds(args.get("queries", "").split(","))
+    str_queries = raw.get("queries", "").split(",")
+    queries = convertValidRootIds([single] if single else str_queries)
+    dfdict = client.chunkedgraph.get_tabular_change_log(queries, isLineage)
+    #df = pd.DataFrame.from_dict(dfdict, orient='index')
+    for key, value in dfdict.items():
+        try:
+            jsonData = processToJson(str(key), value)
+            reqs.append(jsonData)
+            csv = value.to_csv()
+        except:
+            print("error")
+
+    content = {
+        "json": reqs,
+        "csv": csv if single else "",
+    }
+    return content
+
+def dataRequest(r):
+    reqs = []
+    graph = None
+    args = r.args
+    raw = json.loads(r.data)
+    datastack = {
+        "https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/": "flywire_fafb_production",
+        "https://minnie.microns-daf.com/segmentation/api/v1/table/fly_training_v2/": "minnie65_phase3_v0",
+        "default": "flywire_fafb_production",
+    }
+    single = args.get("query")
+    isFiltered = args.get("filtered", "false") == "true"
+    isLineage = args.get("lineage", "false") == "true"
+    dataset = args.get("dataset", "default")
+    #use user token, instead of local token
+    client = CAVEclient(datastack[dataset])
+    str_queries = raw.get("queries", "").split(",")
+    queries = list(set(convertValidRootIds([single] if single else str_queries)))
+    
+    dictsBatched = multiThread(client, queries, isFiltered)
+    dfdict = {k: v for d in dictsBatched for k, v in d.items()}
+    if (isLineage):
+        graphsBatched = multiThread(client, queries, graph=True)
+        graphs = [g for batch in graphsBatched for g in batch]
+        graph = nx.compose_all(graphs) if len(graphs) > 1 else graphs[0]
+
+    for key, value in dfdict.items():
+        try:
+            jsonData = processToJson(str(key), value, graph)
+            reqs.append(jsonData)
+            csv = value.to_csv()
+        except:
+            #todo
+            pass
+
+    return {
+        "json": reqs,
+        "csv": csv if single else "",
+    }
+
+def multiThread(client, queries, filter = True, graph = False, b_size = 10, p_size = 10):
+    bqueries = [(client, queries[i : i + b_size], filter) for i in range(0, len(queries), b_size)]
+    p = Pool(p_size)
+    results = p.imap(caveGRPH if graph else caveCHLG, bqueries)
+    p.close()
+    p.join()
+    return results
+
+def caveCHLG(args):
+    return args[0].chunkedgraph.get_tabular_change_log(args[1], args[2])
+#return list of graphs
+def caveGRPH(args):
+    args[0].chunkedgraph.get_lineage_graph(args[1], as_nx_graph=True)
+    return
 
 def processToJson(query, dataframe, graph=None):
     pubdict = None
@@ -260,7 +320,6 @@ def processToJson(query, dataframe, graph=None):
         "lineage": len(published) > 0,
         "published": pubdict,
     }
-
 
 def publish_neurons(args):
     auth_header = {"Authorization": f"Bearer {g.auth_token}"}
@@ -297,7 +356,6 @@ def publish_neurons(args):
 
     return existing
 
-
 def removeInvalidRootIds(ids):
     valid = []
     for id in ids:
@@ -308,21 +366,52 @@ def removeInvalidRootIds(ids):
             pass
     return valid
 
+def convertValidRootIds(ids):
+    valid = []
+    for id in ids:
+        try:
+            valid.append(np.uint64(id))
+        except:
+            pass
+    return valid
 
 def validDOI(doi):
     valid = not len(doi) or re.match("^10.\d{4,9}[-._;()/:A-Z0-9]+$", doi)
     return doi if valid else ""
 
-
 def validPaper(pname):
     valid = not len(pname) or re.match("^[\w\-\s]+$", pname)
     return pname if valid else ""
 
-
 def publishRequest(args):
     return pd.DataFrame.from_dict(publish_neurons(args), orient="index").to_html()
-
 
 def publishDump():
     with engine.connect() as conn:
         return tableDump(conn).to_html()
+
+def serverRequest(args):
+    batch = args[0]
+    fullURL = args[1]
+    lineURL = args[2]
+    auth_header = args[3]
+    isLineage = args[4]
+    results = {}
+    graphs = []
+    error = []
+    nolineage = {}
+    jbatch = json.dumps({"root_ids": batch})
+    try:
+        r = requests.get(fullURL, headers=auth_header, data=jbatch)
+        results.update(json.loads(r.content))
+    except:
+        error = error + batch
+
+    if isLineage:
+        try:
+            response = requests.post(lineURL, headers=auth_header, data=jbatch)
+            graphs.append(nx.node_link_graph(json.loads(response.content)))
+        except:
+            nolineage.update(dict.fromkeys(batch, True))
+
+    return {"results": results, "graphs": graphs, "error": error, "nolineage": nolineage}

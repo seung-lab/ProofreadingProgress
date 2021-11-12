@@ -92,10 +92,10 @@ def unhandled_exception(e):
 # -------------------
 
 
-@bp.route("/qry/", methods=["GET"])
+@bp.route("/qry/", methods=["GET", "POST"])
 @auth_required
 def pass_through():
-    return common.apiRequest(request.args)
+    return common.dataRequest(request)
 
 
 @bp.route("/pub/", methods=["GET"])

@@ -15,6 +15,7 @@ function openWindowWithGet(url, data, name = '', params = '') {
 function openWindowWithPost(url, data) {
   var form = document.createElement('form');
   form.target = '_blank';
+  // TODO: modify to work better
   form.method = 'POST';
   form.action = url;
   form.style.display = 'none';
@@ -40,9 +41,9 @@ const app = new Vue({
     // INPUT
     query: {
       root_id: auto_rootid || '',
-      historical: false,
       filtered: true,
-      lineage: true
+      // lineage: true
+      lineage: false
     },
     excelcsv: false,
     dataset:
@@ -84,6 +85,7 @@ const app = new Vue({
   methods: {
     rootsIDTest: function() {
       return /^ *\d+ *(?:, *\d+ *)*$/gm.test(this.str_multiquery) ||
+          /^ *\d+ *(?: +\d+ *)*$/gm.test(this.str_multiquery) ||
           !this.str_multiquery.length;
     },
     apiRequest: async function() {
@@ -95,7 +97,7 @@ const app = new Vue({
       const parameters =
           `?root_ids=${this.query.historical}&filtered=${this.query.filtered}`;
       if (!this.query.root_id.length) {
-        request.searchParams.set('queries', this.str_multiquery);
+        // request.searchParams.set('queries', this.str_multiquery);
       } else {
         request.searchParams.set('query', this.query.root_id);
       }
@@ -105,7 +107,16 @@ const app = new Vue({
 
       try {
         await this.published;
-        const response = await fetch(request);
+        const response = await fetch(request, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          // body: JSON.stringify({queries: this.str_multiquery}),
+          body: JSON.stringify(
+              {queries: this.str_multiquery.split(/[ ,]+/).join(',')}),
+        });
         await this.processData(await response.json());
         this.status = 'Submit';
         this.loading = false;
@@ -120,7 +131,8 @@ const app = new Vue({
       rawData = response.json;  // JSON.parse(response.json);
       const singleRow = rawData[0];
       if (!this.str_multiquery.length && rawData[0]) {
-        if (response.errorgraph.length)
+        if (this.query.lineage && response.errorgraph &&
+            response.errorgraph.length)
           alert('Could not retrieve lineage graph!');
         if (singleRow.edits.length) {
           this.headers = Object.keys(singleRow.edits[0]);
@@ -231,7 +243,11 @@ const app = new Vue({
       this.csv = Papa.unparse(csv);
       this.userCSV = Papa.unparse(this.userList);
 
-      const ex_res = this.response.map(row => `'${row[0]}`);
+      const ex_res = this.response.map(row => {
+        var newRow = [...row]
+        newRow[0] = `'${newRow[0]}`;
+        return newRow;
+      });
       const ex_csv = [this.headers, ...ex_res];
       this.ex_csv = Papa.unparse(ex_csv);
     },
