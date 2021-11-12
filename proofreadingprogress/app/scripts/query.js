@@ -94,8 +94,7 @@ const app = new Vue({
       this.status = 'Loading...';
 
       const request = new URL(`${base}/qry/`);
-      const parameters =
-          `?root_ids=${this.query.historical}&filtered=${this.query.filtered}`;
+      const parameters = `?filtered=${this.query.filtered}`;
       if (!this.query.root_id.length) {
         // request.searchParams.set('queries', this.str_multiquery);
       } else {
