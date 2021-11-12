@@ -94,7 +94,8 @@ const app = new Vue({
       this.status = 'Loading...';
 
       const request = new URL(`${base}/qry/`);
-      const parameters = `?filtered=${this.query.filtered}`;
+      const parameters =
+          `?filtered=${this.query.filtered}&?middle_auth_token=xyz`;
       if (!this.query.root_id.length) {
         // request.searchParams.set('queries', this.str_multiquery);
       } else {
@@ -113,8 +114,9 @@ const app = new Vue({
             'Content-Type': 'application/json'
           },
           // body: JSON.stringify({queries: this.str_multiquery}),
-          body: JSON.stringify(
-              {queries: this.str_multiquery.split(/[ ,]+/).join(',')}),
+          body: JSON.stringify({
+            queries: this.str_multiquery.split(/[ ,]+/).join(',')
+          }),
         });
         await this.processData(await response.json());
         this.status = 'Submit';
