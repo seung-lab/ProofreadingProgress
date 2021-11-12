@@ -8,11 +8,11 @@ function openWindowWithGet(url, data, name = '', params = '') {
   window.open(`${url}?${usp.toString()}`, name, params);
 }
 
-const app = new Vue({
+window.app = new Vue({
   el: '#app',
   data: {
-    response: JSON.parse(params.response) ?? [],
-    headers: JSON.parse(params.headers) ?? [],
+    response: [],
+    headers: [],
     selected: [],
     supportSelect: params.select || false
   },

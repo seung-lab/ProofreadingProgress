@@ -8,9 +8,26 @@ function percent(num) {
   var m = Number((Math.abs(num) * 10000).toPrecision(15));
   return (Math.round(m) * Math.sign(num)) / 100;
 }
+function clrPopup(popup, data) {
+  try {
+    popup.app = null;
+  } catch {
+  }
+}
+function setPopup(popup, data) {
+  try {
+    popup.app.$data.headers = data.headers;
+    popup.app.$data.response = data.response;
+  } catch {
+    setTimeout(() => {setPopup(popup, data)}, 250);
+  }
+}
 function openWindowWithGet(url, data, name = '', params = '') {
-  var usp = new URLSearchParams(data);
-  window.open(`${url}?${usp.toString()}`, name, params);
+  // var usp = new URLSearchParams(data);
+  // var popup = window.open(url, name, params);
+  var popup = window.open(url, name);  //, params);
+  clrPopup(popup, data);
+  setPopup(popup, data);
 }
 function openWindowWithPost(url, data) {
   var form = document.createElement('form');
@@ -114,9 +131,8 @@ const app = new Vue({
             'Content-Type': 'application/json'
           },
           // body: JSON.stringify({queries: this.str_multiquery}),
-          body: JSON.stringify({
-            queries: this.str_multiquery.split(/[ ,]+/).join(',')
-          }),
+          body: JSON.stringify(
+              {queries: this.str_multiquery.split(/[ ,]+/).join(',')}),
         });
         await this.processData(await response.json());
         this.status = 'Submit';
@@ -264,8 +280,8 @@ const app = new Vue({
       link.click();
     },
     viewResults: function() {
-      let headers = JSON.stringify(this.headers);
-      let response = JSON.stringify(this.response);
+      let headers = this.headers;
+      let response = this.response;
       openWindowWithGet(
           new URL(`${base}/table`), {headers, response, select: true},
           `Edits Table`, wparams);
@@ -307,8 +323,8 @@ const app = new Vue({
       link.click();
     },
     viewUsers: function() {
-      let headers = JSON.stringify(this.userHeaders);
-      let response = JSON.stringify(this.userList.map(r => Object.values(r)));
+      let headers = this.userHeaders;
+      let response = this.userList.map(r => Object.values(r));
       openWindowWithGet(
           new URL(`${base}/table`), {headers, response}, `User Table`, wparams);
     },
