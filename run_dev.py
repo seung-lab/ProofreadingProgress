@@ -3,19 +3,16 @@ from werkzeug.serving import WSGIRequestHandler
 import os
 
 from proofreadingprogress.app import create_app
-#from caveclient import CAVEclient
+
+# from caveclient import CAVEclient
 
 app = create_app()
 
-if __name__ == '__main__':
-    # client = CAVEclient("flywire_fafb_production", auth_token="4d73dbd6b8cc975c00a35ffa91336431")
-    # client = CAVEclient(auth_token="4d73dbd6b8cc975c00a35ffa91336431")
-    # client = CAVEclient("flywire_fafb_production")
-    # auth = client.auth
-    # client.chunkedgraph.get_tabular_change_log([720575940613252063])
-    # nfo = auth.get_user_information(user_id=[1, 2])
-    # print(nfo)
-    # print(f"My current token is: {auth.token}")
+os.environ["INFO_URL"] = "global.daf-apis.com/info"
+os.environ["AUTH_URL"] = "global.daf-apis.com/auth"
+os.environ["STICKY_AUTH_URL"] = "global.daf-apis.com/sticky_auth"
+
+if __name__ == "__main__":
     print(sys.argv)
     assert len(sys.argv) == 2
     HOME = os.path.expanduser("~")
@@ -28,9 +25,4 @@ if __name__ == '__main__':
 
     print("Port: %d" % port)
 
-
-    app.run(host='localhost',
-            port=port,
-            debug=True,
-            threaded=True,
-            ssl_context='adhoc')
+    app.run(host="localhost", port=port, debug=True, threaded=True, ssl_context="adhoc")
