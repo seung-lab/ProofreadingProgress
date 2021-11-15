@@ -54,12 +54,12 @@
                 </td>
             </tr>
             <tr>
-                <td></td>
+                <td><span>IDs: {{rootCount}}</span></td>
                 <td align="left">
                     <label for="filtered">Filter unrelated edits: </label>
                     <input name="filtered" type="checkbox" v-model.boolean="query.filtered">
                     <label for="lineage">Search Predecessors: </label>
-                    <input name="lineage" type="checkbox" v-model.boolean="query.lineage" :disabled="!query.lineage">
+                    <input name="lineage" type="checkbox" v-model.boolean="query.lineage">
                     <label for=" excel"> Excel Safe Export: </label>
                     <input name="excel" type="checkbox" v-model.boolean="excelcsv">
                     <select v-model="dataset">

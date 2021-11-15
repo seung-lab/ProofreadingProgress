@@ -56,12 +56,7 @@ const app = new Vue({
   el: '#app',
   data: {
     // INPUT
-    query: {
-      root_id: auto_rootid || '',
-      filtered: true,
-      // lineage: true
-      lineage: false
-    },
+    query: {root_id: auto_rootid || '', filtered: true, lineage: true},
     excelcsv: false,
     dataset:
         'https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/',
@@ -98,6 +93,11 @@ const app = new Vue({
         'form-error': !valid, valid
       }
     },
+    rootCount: function() {
+      return !this.str_multiquery.length ?
+          0 :
+          this.str_multiquery.split(/[ ,]+/).length;
+    }
   },
   methods: {
     rootsIDTest: function() {
@@ -148,9 +148,6 @@ const app = new Vue({
       rawData = response.json;  // JSON.parse(response.json);
       const singleRow = rawData[0];
       if (!this.str_multiquery.length && rawData[0]) {
-        if (this.query.lineage && response.errorgraph &&
-            response.errorgraph.length)
-          alert('Could not retrieve lineage graph!');
         if (singleRow.edits.length) {
           this.headers = Object.keys(singleRow.edits[0]);
           singleRow.edits.forEach(row => {
@@ -198,9 +195,7 @@ const app = new Vue({
           ['published', seg.published],
         ];
         if (this.query.lineage) {
-          segMapRow.push([
-            'published_ancestor', data.errorgraph[id] ? 'N/A' : seg.lineage
-          ]);
+          segMapRow.push(['published_ancestor', seg.lineage ?? 'N/A']);
         }
         segmentList.push(new Map(segMapRow));
       });

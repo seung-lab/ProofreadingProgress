@@ -35,10 +35,10 @@
                     <input name="filtered" type="checkbox" v-model.boolean="query.filtered">
                     <label for="lineage"> Search
                         Predecessors: </label>
-                    <input name="lineage" type="checkbox" v-model.boolean="query.lineage" :disabled="!query.lineage">
-                    <!--<label for="excel"> Excel
+                    <input name="lineage" type="checkbox" v-model.boolean="query.lineage">
+                    <label for="excel"> Excel
                         Safe Export: </label>
-                    <input name="excel" type="checkbox" v-model.boolean="excelcsv">-->
+                    <input name="excel" type="checkbox" v-model.boolean="excelcsv">
                     <select v-model="dataset">
                         <option value="https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/">
                             Production</option>

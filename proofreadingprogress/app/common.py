@@ -31,7 +31,7 @@ __url_prefix__ = os.environ.get("PPROGRESS_URL_PREFIX", "progress")
 # auth_token_json = json.loads(auth_token_file.read())
 # auth_token = auth_token_json["token"]
 # retrieved_token = g.get('auth_token', auth_token )
-# engine = connect_db()
+engine = connect_db()
 
 # -------------------------------
 # ------ Access control and index
@@ -157,7 +157,7 @@ def dataRequest(r):
     isLineage = args.get("lineage", "false") == "true"
     dataset = args.get("dataset", "default")
     #use user token, instead of local token
-    client = CAVEclient(datastack[dataset], auth_token=g.auth_token)
+    client = CAVEclient(datastack[dataset])#, auth_token=g.auth_token)
     #print(f"My current token is: {client.auth.token}")
     str_queries = raw.get("queries", "").split(",")
     queries = list(set(convertValidRootIds([single] if single else str_queries)))
@@ -166,7 +166,9 @@ def dataRequest(r):
     dfdict = {k: v for d in dictsBatched for k, v in d.items()}
     if (isLineage):
         graphsBatched = multiThread(client, queries, graph=True)
-        graphs = [g for batch in graphsBatched for g in batch]
+        #graphs = [g for batch in graphsBatched for g in batch]
+        batches = [batch for batch in graphsBatched]
+        graphs = [g for g in batches]
         graph = nx.compose_all(graphs) if len(graphs) > 1 else graphs[0]
 
     for key, value in dfdict.items():
@@ -195,8 +197,7 @@ def caveCHLG(args):
     return args[0].chunkedgraph.get_tabular_change_log(args[1], args[2])
 #return list of graphs
 def caveGRPH(args):
-    args[0].chunkedgraph.get_lineage_graph(args[1], as_nx_graph=True)
-    return
+    return args[0].chunkedgraph.get_lineage_graph(args[1], as_nx_graph=True)
 
 def processToJson(query, dataframe, graph=None):
     pubdict = None
