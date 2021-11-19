@@ -31,7 +31,7 @@ __url_prefix__ = os.environ.get("PPROGRESS_URL_PREFIX", "progress")
 # auth_token_json = json.loads(auth_token_file.read())
 # auth_token = auth_token_json["token"]
 # retrieved_token = g.get('auth_token', auth_token )
-engine = connect_db()
+# engine = connect_db()
 
 # -------------------------------
 # ------ Access control and index
@@ -223,6 +223,8 @@ def processToJson(query, dataframe, graph=None):
     }
 
 def publish_neurons(args):
+    if (True == True):
+        return {}
     auth_header = {"Authorization": f"Bearer {g.auth_token}"}
     mustVerify = args.get("verify", "false") == "true"
     paperName = validPaper(args.get("pname", ""))
