@@ -157,7 +157,7 @@ def dataRequest(r):
     isLineage = args.get("lineage", "false") == "true"
     dataset = args.get("dataset", "default")
     #use user token, instead of local token
-    client = CAVEclient(datastack[dataset])#, auth_token=g.auth_token)
+    client = CAVEclient(datastack[dataset], auth_token=g.auth_token)
     #print(f"My current token is: {client.auth.token}")
     str_queries = raw.get("queries", "").split(",")
     queries = list(set(convertValidRootIds([single] if single else str_queries)))
