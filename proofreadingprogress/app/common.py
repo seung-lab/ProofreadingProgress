@@ -148,8 +148,8 @@ def dataRequest(r):
     args = r.args
     raw = json.loads(r.data)
     datastack = {
-        "https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/": "flywire_fafb_production",
-        "https://minnie.microns-daf.com/segmentation/api/v1/table/fly_training_v2/": "minnie65_phase3_v0",
+        "fly_v31": "flywire_fafb_production",
+        "fly_training_v2": "minnie65_phase3_v0",
         "default": "flywire_fafb_production",
     }
     single = args.get("query")

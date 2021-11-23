@@ -63,8 +63,7 @@ const app = new Vue({
     // INPUT
     query: {root_id: auto_rootid || '', filtered: true, lineage: true},
     excelcsv: false,
-    dataset: auto_dataset ||
-        'https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/',
+    dataset: auto_dataset || 'fly_v31',
     str_multiquery: '',
     // OUTPUT
     failed: '',
