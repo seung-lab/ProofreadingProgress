@@ -147,17 +147,14 @@ def dataRequest(r):
     graph = None
     args = r.args
     raw = json.loads(r.data)
-    datastack = {
-        "fly_v31": "flywire_fafb_production",
-        "fly_training_v2": "minnie65_phase3_v0",
-        "default": "flywire_fafb_production",
-    }
     single = args.get("query")
     isFiltered = args.get("filtered", "false") == "true"
     isLineage = args.get("lineage", "false") == "true"
     dataset = args.get("dataset", "default")
     #use user token, instead of local token
-    client = CAVEclient(datastack[dataset], auth_token=g.auth_token)
+    client = CAVEclient.chunkedgraph.ChunkedGraphClient(server_address="https://prod.flywire-daf.com", 
+                                                       table_name=dataset, 
+                                                       auth_client=CAVEclient.auth.AuthClient(token=g.auth_token))
     #print(f"My current token is: {client.auth.token}")
     str_queries = raw.get("queries", "").split(",")
     queries = list(set(convertValidRootIds([single] if single else str_queries)))
