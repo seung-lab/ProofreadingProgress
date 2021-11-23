@@ -2,6 +2,8 @@ const base = `${window.location.origin}/${
     document.getElementById('prefix').innerText || ''}/api/v1`;
 const params = (new URL(document.location)).searchParams;
 const auto_rootid = params.get('rootid');
+const auto_submit = params.get('submit');
+const auto_dataset = params.get('dataset');
 const wparams = `location=no,toolbar=no,menubar=no,width=620,left=0,top=0`;
 // HELPERS
 function percent(num) {
@@ -54,11 +56,14 @@ function importCSVCheck(id) {
 
 const app = new Vue({
   el: '#app',
+  mounted() {
+    if (auto_submit) this.apiRequest();
+  },
   data: {
     // INPUT
     query: {root_id: auto_rootid || '', filtered: true, lineage: true},
     excelcsv: false,
-    dataset:
+    dataset: auto_dataset ||
         'https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/',
     str_multiquery: '',
     // OUTPUT
