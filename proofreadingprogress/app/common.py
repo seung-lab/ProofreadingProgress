@@ -154,7 +154,7 @@ def dataRequest(r):
     #use user token, instead of local token
     client = chunkedgraph.ChunkedGraphClient(server_address="https://prod.flywire-daf.com", 
                                             table_name=dataset, 
-                                            auth_client=auth.AuthClient(token=g.auth.token))
+                                            auth_client=auth.AuthClient(token=g.auth_token))
     #print(f"My current token is: {client.auth.token}")
     str_queries = raw.get("queries", "").split(",")
     queries = list(set(convertValidRootIds([single] if single else str_queries)))
