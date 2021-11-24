@@ -17,7 +17,7 @@ import os
 import pandas as pd
 import networkx as nx
 from multiprocessing.pool import ThreadPool as Pool
-from caveclient import CAVEclient
+from caveclient import CAVEclient, chunkedgraph, auth
 import numpy as np
 
 __api_versions__ = [0]
@@ -152,9 +152,9 @@ def dataRequest(r):
     isLineage = args.get("lineage", "false") == "true"
     dataset = args.get("dataset", "default")
     #use user token, instead of local token
-    client = CAVEclient.chunkedgraph.ChunkedGraphClient(server_address="https://prod.flywire-daf.com", 
-                                                       table_name=dataset, 
-                                                       auth_client=CAVEclient.auth.AuthClient(token=g.auth_token))
+    client = chunkedgraph.ChunkedGraphClient(server_address="https://prod.flywire-daf.com", 
+                                            table_name=dataset, 
+                                            auth_client=auth.AuthClient(token=g.auth.token))
     #print(f"My current token is: {client.auth.token}")
     str_queries = raw.get("queries", "").split(",")
     queries = list(set(convertValidRootIds([single] if single else str_queries)))
