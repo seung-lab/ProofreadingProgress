@@ -115,15 +115,13 @@ const app = new Vue({
       this.status = 'Loading...';
 
       const request = new URL(`${base}/qry/`);
-      const parameters =
-          `?filtered=${this.query.filtered}&?middle_auth_token=xyz`;
       if (!this.query.root_id.length) {
         // request.searchParams.set('queries', this.str_multiquery);
       } else {
         request.searchParams.set('query', this.query.root_id);
       }
       request.searchParams.set('dataset', this.dataset);
-      request.searchParams.set('params', parameters);
+      request.searchParams.set('filtered', this.query.filtered);
       request.searchParams.set('lineage', this.query.lineage);
 
       try {
