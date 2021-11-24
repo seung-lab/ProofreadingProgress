@@ -191,10 +191,10 @@ def multiThread(client, queries, filter = True, graph = False, b_size = 10, p_si
     return results
 
 def caveCHLG(args):
-    return args[0].chunkedgraph.get_tabular_change_log(args[1], args[2])
+    return args[0].get_tabular_change_log(args[1], args[2])
 #return list of graphs
 def caveGRPH(args):
-    return args[0].chunkedgraph.get_lineage_graph(root_id=args[1], as_nx_graph=True)
+    return args[0].get_lineage_graph(root_id=args[1], as_nx_graph=True)
 
 def processToJson(query, dataframe, graph=None):
     pubdict = None
