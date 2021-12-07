@@ -5,6 +5,8 @@ const auto_rootid = params.get('rootid');
 const auto_submit = params.get('submit');
 const auto_dataset = params.get('dataset');
 const wparams = `location=no,toolbar=no,menubar=no,width=620,left=0,top=0`;
+document.querySelectorAll('#info').forEach(
+    e => e.addEventListener('click', v => v.stopImmediatePropagation()));
 // HELPERS
 function percent(num) {
   var m = Number((Math.abs(num) * 10000).toPrecision(15));
@@ -192,12 +194,11 @@ const app = new Vue({
           }
         });
         const segMapRow = [
-          ['segment_ID', id],
-          ['total_edits', seg.edits.length],
-          ['published', seg.published],
+          ['segment_ID', id], ['total_edits', seg.edits.length],
+          //['published', seg.published],
         ];
         if (this.query.lineage) {
-          segMapRow.push(['published_ancestor', seg.lineage ?? 'N/A']);
+          // segMapRow.push(['published_ancestor', seg.lineage ?? 'N/A']);
         }
         segmentList.push(new Map(segMapRow));
       });
@@ -355,3 +356,7 @@ const app = new Vue({
     }
   }
 });
+
+$(function() {
+  $('[data-toggle="tooltip"]').tooltip()
+})

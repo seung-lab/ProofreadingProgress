@@ -1,99 +1,105 @@
-<!DOCTYPE html>
-<html>
+{% extends "base.html" %}
+{% block title %} Multi Neuron Changelog {% endblock %}
+{% block content %}
 
-<head>
-    <link rel="stylesheet" type="text/css" href="style.css" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
-    <title>Root Query</title>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
-        crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/vue"></script>
-    <script src="https://unpkg.com/@johmun/vue-tags-input/dist/vue-tags-input.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.js"
-        integrity="sha512-/McISOEKVzVvgu12/1Hk8dSrbKBShnKn79/R50ysl5qWR1zgj347kOT8LJJvInxHDSPmiBG9vg5AhMx6rcELJg=="
-        crossorigin="anonymous"></script>
-    <style>
-        div.vue-tags-input {
-            max-width: 1000px !important;
-            width: 750px;
-        }
+<h4 style="margin: 14px;">Multi Neuron Changelog</h4>
+<!--<h6 style="margin: 14px; color: grey;">Data updated: %%updated_time%%</h6>
+{% if error != None %}
+<h6 style="margin: 14px; color: red;">Error: {{error}}</h6>
+{% endif %}-->
 
-        textarea {
-            width: 1000px;
-        }
+<span id="app">
+    <h6 style="margin: 14px;"><a data-toggle="tooltip"
+            title="Filter out edits to parts of a cell that didn't end up on the final cell. Also filters out edits that were performed then reversed. Selecting this is the default, so that credit can be given to users who edited the cell shown.">
+            <img style='vertical-align:initial' src='/static/info.png'></a>&nbspEnter Segment
+        Ids:</h6>
+    <nav class="navbar navbar-light bg-light" style="justify-content: flex-start;"><textarea v-model="str_multiquery"
+            v-bind:class="validRoots"></textarea><button class="btn btn-primary" type="button" @click="apiRequest"
+            :disabled="!isReady">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true" v-show="loading"></span>
+            {{ status }}
+        </button>
+        <button @click="chooseCSV" class="btn btn-primary">Import CSV</button>
+        <input style="display: none" type="file" id="import" @change="importCSV">
+    </nav>
+    <nav class="navbar navbar-light bg-light" style="justify-content: flex-start;">
+        <span>
+            <a data-toggle="tooltip" title='Remove extra edits such as Undone operation.'>
+                <img style='vertical-align:initial' src='/static/info.png'>
+            </a>
+            <label for="filtered"> Filter unrelated edits: </label>
+            <input name="filtered" type="checkbox" v-model.boolean="query.filtered">
+        </span>
+        <!--<span>
+                                    <label for="lineage"> Search
+                                        Predecessors: </label>
+                                    <input name="lineage" type="checkbox" v-model.boolean="query.lineage">
+                                </span>-->
+        <span style="margin-left: 20px;">
+            <a data-toggle="tooltip"
+                title='Export CSV in a format that will correctly display segment IDs in Excel (which would otherwise replace final digits with zeroes).'>
+                <img style='vertical-align:initial' src='/static/info.png'>
+            </a>
+            <label for="excel"> Excel
+                Safe Export: </label>
+            <input name="excel" type="checkbox" v-model.boolean="excelcsv">
+        </span>
+        <span style="margin-left: 20px;">
+            <label for="dset"> Dataset: </label>
+            <select name="dset" v-model="dataset">
+                <option value="fly_v31">
+                    Production</option>
+                <option value="fly_training_v2">
+                    Testing</option>
+                <option disabled value="">Sandbox</option>
+            </select>
+        </span>
+    </nav>
 
-        td.major {
-            background-color: gold;
-        }
 
-        .btn {
-            margin-left: 10px;
-        }
-    </style>
-</head>
 
-<body><span id="prefix" style="display: none;">%% prefix %%</span>
-    <div id="app">
-        <table>
-            <tr>
-                <td align="right"><label for="query">Query: </label></td>
-                <td align="left">
-                    <!--<vue-tags-input v-model="tag" placeholder="Add Root Id" :validation="numval"
-                                                :tags="multiquery" @tags-changed="newTags => multiquery = newTags" />-->
-                    <textarea v-model="str_multiquery" v-bind:class="validRoots"></textarea>
-                </td>
-                <td align="left">
-                    <button class="btn btn-primary" type="button" @click="apiRequest" :disabled="!isReady">
-                        <span class="spinner-border spinner-border-sm" aria-hidden="true" v-show="loading"></span>
-                        {{ status }}
-                    </button>
-                    <button @click="chooseCSV" class="btn btn-primary">Import CSV</button>
-                    <input style="display: none" type="file" id="import" @change="importCSV">
-                </td>
-            </tr>
-            <tr>
-                <td><span>IDs: {{rootCount}}</span></td>
-                <td align="left">
-                    <label for="filtered">Filter unrelated edits: </label>
-                    <input name="filtered" type="checkbox" v-model.boolean="query.filtered">
-                    <label for="lineage">Search Predecessors: </label>
-                    <input name="lineage" type="checkbox" v-model.boolean="query.lineage">
-                    <label for=" excel"> Excel Safe Export: </label>
-                    <input name="excel" type="checkbox" v-model.boolean="excelcsv">
-                    <select v-model="dataset">
-                        <option value="fly_v31">
-                            Production</option>
-                        <option value="fly_training_v2">
-                            Testing</option>
-                        <option disabled value="">Sandbox</option>
-                    </select>
-                </td>
-            </tr>
-            <tr v-show='colChoices.length !== 0'>
-                <td align='right'><label>Csv Column: </label></td>
-                <td align='left'>
-                    <button @click="importCol(c)" v-for="(col, c) in colChoices"
-                        class="btn btn-primary">{{col}}</button>
-                </td>
-            </tr>
-            <tr v-show='response.length !== 0'>
+    <span id="prefix" style="display: none;">%% prefix %%</span>
+    <!--<div id="app">-->
+    <table>
+        <tr v-show='colChoices.length !== 0'>
+            <td align='right'><label>Csv Column: </label></td>
+            <td align='left'>
+                <button @click="importCol(c)" v-for="(col, c) in colChoices" class="btn btn-primary">{{col}}</button>
+            </td>
+        </tr>
+        <!--<tr v-show='response.length !== 0'>
                 <td align="right"><label for="query">Failed: </label></td>
                 <td align="left">
                     <textarea v-model="failed"></textarea>
                 </td>
-            </tr>
-        </table>
-        <button @click="viewResults" :disabled="!response.length" class="btn btn-primary">View Edit Table</button>
-        <button @click="exportCSV" :disabled="!response.length" class="btn btn-primary">Export CSV</button>
-        <button @click="mergeCSV" :disabled="!response.length || !importedCSVFile.length" class="btn btn-primary">Merge
-            CSV</button>
-        <br><br>
-        <button @click="viewUsers" :disabled="!userList.length" class="btn btn-primary">View User Table</button>
-        <button @click="exportUserCSV" :disabled="!userCSV.length" class="btn btn-primary">Export CSV</button>
-    </div>
-    <script src="query.js"></script>
-</body>
-
-</html>
+            </tr>-->
+        <tr v-show='response.length !== 0'>
+            <td>
+                <label>Edits per user per neuron: </label>
+            </td>
+        </tr>
+        <tr v-show='response.length !== 0'>
+            <td>
+                <button @click="viewResults" :disabled="!response.length" class="btn btn-primary">View</button>
+                <button @click="exportCSV" :disabled="!response.length" class="btn btn-primary">Export CSV</button>
+            </td>
+            <!--<button @click="mergeCSV" :disabled="!response.length || !importedCSVFile.length"
+                                class="btn btn-primary">Merge
+                                CSV</button>-->
+        </tr>
+        <tr v-show='response.length !== 0'>
+            <td>
+                <label>Edits per user on all given neurons combined: </label>
+            </td>
+        </tr>
+        <tr v-show='response.length !== 0'>
+            <td>
+                <button @click="viewUsers" :disabled="!userList.length" class="btn btn-primary">View</button>
+                <button @click="exportUserCSV" :disabled="!userCSV.length" class="btn btn-primary">Export
+                    CSV</button>
+            </td>
+        </tr>
+    </table>
+</span>
+<script src="query.js"></script>
+{% endblock %}

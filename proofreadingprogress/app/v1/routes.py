@@ -26,10 +26,15 @@ def query():
     return common.query()
 
 
-@bp.route("/user", methods=["GET"])
+@bp.route("/multi", methods=["GET"])
 @auth_required
 def user():
     return common.user()
+
+'''@bp.route("/base", methods=["GET"])
+@auth_required
+def base():
+    return common.basee()'''
 
 
 @bp.route("/publish", methods=["GET"])
@@ -54,6 +59,12 @@ def scripts(name):
 @auth_required
 def style(name):
     return common.getStyles(name + ".css")
+
+
+@bp.route("/<name>.png", methods=["GET"])
+@auth_required
+def image(name):
+    return common.getStyles("static/" + name + ".png")
 
 
 @bp.route

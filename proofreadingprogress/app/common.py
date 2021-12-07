@@ -52,6 +52,10 @@ def user():
     return render_template("user.html", prefix=__url_prefix__)
 
 
+def base():
+    return render_template("base.html", prefix=__url_prefix__)
+
+
 def publish():
     return render_template("publish.html", prefix=__url_prefix__)
 
