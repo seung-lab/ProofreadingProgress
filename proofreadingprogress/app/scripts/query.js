@@ -75,7 +75,9 @@ const app = new Vue({
     dataset: auto_dataset || 'fly_v31',
     str_multiquery: '',
     // OUTPUT
-    failed: '',
+    error: '',
+    warn: '',
+    failed: 0,
     response: [],
     headers: [],
     csv: '',
@@ -136,9 +138,12 @@ const app = new Vue({
       const responses = [];
       const rawRequests = this.str_multiquery.split(/[ ,]+/);
       const requests = Array.from(new Set(rawRequests));
+      const dupCount = rawRequests.length - requests.length;
+      this.warn = dupCount ? `${dupCount} duplicates removed.` : '';
       const batches = partition(requests, 100);
-      try {
-        for (const reqSet of batches) {
+      let failed = 0;
+      for (const reqSet of batches) {
+        try {
           responses.push(await fetch(request, {
             method: 'POST',
             headers: {
@@ -147,8 +152,10 @@ const app = new Vue({
             },
             body: JSON.stringify({queries: reqSet.join(',')}),
           }));
+        } catch (e) {
+          failed++;
+          this.error = `${failed} requests failed.\n`;
         }
-      } catch (e) {
       }
       try {
         const resArray =
