@@ -18,6 +18,13 @@ function clrPopup(popup, data) {
   } catch {
   }
 }
+function partition(items, size) {
+  var p = [];
+  for (var i = Math.ceil(items.length / size); i-- > 0;) {
+    p[i] = items.slice(i * size, (i + 1) * size);
+  }
+  return p;
+}
 function setPopup(popup, data) {
   try {
     popup.app.$data.headers = data.headers;
@@ -126,19 +133,33 @@ const app = new Vue({
       request.searchParams.set('filtered', this.query.filtered);
       request.searchParams.set('lineage', this.query.lineage);
 
+      const responses = [];
+      const rawRequests = this.str_multiquery.split(/[ ,]+/);
+      const requests = Array.from(new Set(rawRequests));
+      const batches = partition(requests, 100);
       try {
-        await this.published;
-        const response = await fetch(request, {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          // body: JSON.stringify({queries: this.str_multiquery}),
-          body: JSON.stringify(
-              {queries: this.str_multiquery.split(/[ ,]+/).join(',')}),
-        });
-        await this.processData(await response.json());
+        for (const reqSet of batches) {
+          responses.push(await fetch(request, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({queries: reqSet.join(',')}),
+          }));
+        }
+      } catch (e) {
+      }
+      try {
+        const resArray =
+            await Promise.all(responses.map(async r => await r.json()));
+        const jsonArray = resArray.map(d => d.json).flat();
+        if (jsonArray.length == 1) {
+          this.csv = resArray[0].csv.replace(/\[|\]/g, '');
+        }
+        console.log(
+            `${requests.length} requests, ${jsonArray.length} responses`);
+        await this.processData(jsonArray);
         this.status = 'Submit';
         this.loading = false;
       } catch (e) {
@@ -148,8 +169,7 @@ const app = new Vue({
         throw e;
       }
     },
-    processData: function(response) {
-      rawData = response.json;  // JSON.parse(response.json);
+    processData: function(rawData) {
       const singleRow = rawData[0];
       if (!this.str_multiquery.length && rawData[0]) {
         if (singleRow.edits.length) {
@@ -160,12 +180,12 @@ const app = new Vue({
             }
           });
           this.response = singleRow.edits;
-          this.csv = response.csv.replace(/\[|\]/g, '');
+          // this.csv = response.csv.replace(/\[|\]/g, '');
         } else {
           alert(`Root ID ${this.query.root_id} has no edits`);
         }
       } else if (this.str_multiquery.length) {
-        this.queryProcess(response);
+        this.queryProcess(rawData);
       }
     },
     queryProcess: function(data) {

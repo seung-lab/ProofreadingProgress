@@ -52,19 +52,19 @@ def table():
 @bp.route("/<name>.js", methods=["GET"])
 @auth_required
 def scripts(name):
-    return common.getScripts("scripts/" + name + ".js")
+    return common.getResource("scripts/" + name + ".js")
 
 
 @bp.route("/<name>.css", methods=["GET"])
 @auth_required
 def style(name):
-    return common.getStyles(name + ".css")
+    return common.getResource(name + ".css")
 
 
 @bp.route("/<name>.png", methods=["GET"])
 @auth_required
 def image(name):
-    return common.getStyles("static/" + name + ".png")
+    return common.getResource(name + ".png")
 
 
 @bp.route

@@ -40,9 +40,7 @@ __url_prefix__ = os.environ.get("PPROGRESS_URL_PREFIX", "progress")
 
 def index():
     from .. import __version__
-
     return f"ProofreadingProgress v{__version__}"
-
 
 def query():
     return render_template("query.html", prefix=__url_prefix__)
@@ -64,13 +62,8 @@ def table():
     return render_template("table.html", prefix=__url_prefix__)
 
 
-def getScripts(name):
+def getResource(name):
     return send_from_directory(".", name)
-
-
-def getStyles(name):
-    return send_from_directory(".", name)
-
 
 def home():
     resp = make_response()
@@ -153,7 +146,7 @@ def dataRequest(r):
     raw = json.loads(r.data)
     single = args.get("query")
     isFiltered = args.get("filtered", "false") == "true"
-    isLineage = args.get("lineage", "false") == "true"
+    isLineage = False#args.get("lineage", "false") == "true"
     dataset = args.get("dataset", "default")
     #use user token, instead of local token
     client = chunkedgraph.ChunkedGraphClient(server_address="https://prod.flywire-daf.com", 
