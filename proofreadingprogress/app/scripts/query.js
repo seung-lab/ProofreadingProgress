@@ -203,7 +203,7 @@ const app = new Vue({
        */
       const userIdsHash = {};
       const segmentList = [];
-      data.json.forEach((seg, i) => {
+      data.forEach((seg, i) => {
         const id = seg.key;
         seg.edits.forEach(f => {
           if (!userIdsHash[f.user_id]) {

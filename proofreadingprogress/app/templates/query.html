@@ -12,7 +12,7 @@
     <h6 v-show='error.length !== 0' style="margin: 14px; color: red;">Error: {{error}}</h6>
     <h6 v-show='warn.length !== 0' style="margin: 14px; color: orange;">Warning: {{warn}}</h6>
     <h6 style="margin: 14px;">
-        <img style='vertical-align:initial' src='/static/info.png'></a>&nbspSegment
+        <img style='vertical-align:initial' src='info.png'></a>&nbspSegment
         ID:
     </h6>
     <nav class="navbar navbar-light bg-light" style="justify-content: flex-start;">
@@ -26,7 +26,7 @@
         <span>
             <a data-toggle="tooltip"
                 title="Filters out edits to parts of a cell that didn't end up on the final cell. Also filters out edits that were performed then reversed. Selecting this is the default, so that credit can be given to users who edited the cell shown.">
-                <img style='vertical-align:initial' src='/static/info.png'>
+                <img style='vertical-align:initial' src='info.png'>
             </a>
             <label for="filtered"> Filter unrelated edits: </label>
             <input name="filtered" type="checkbox" v-model.boolean="query.filtered">
@@ -39,7 +39,7 @@
         <span style="margin-left: 80px;">
             <a data-toggle="tooltip"
                 title='Export CSV in a format that will correctly display segment IDs in Excel (which would otherwise replace final digits with zeroes). Not recommended for programmatic analysis.'>
-                <img style='vertical-align:initial' src='/static/info.png'>
+                <img style='vertical-align:initial' src='info.png'>
             </a>
             <label for="excel"> Excel
                 Safe Export: </label>
