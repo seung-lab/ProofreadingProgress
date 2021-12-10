@@ -59,50 +59,41 @@
         </span>
     </nav>
 
-
-
     <span id="prefix" style="display: none;">%% prefix %%</span>
-    <!--<div id="app">-->
-    <table>
-        <tr v-show='colChoices.length !== 0'>
-            <td align='right'><label>Csv Column: </label></td>
-            <td align='left'>
-                <button @click="importCol(c)" v-for="(col, c) in colChoices" class="btn btn-primary">{{col}}</button>
-            </td>
-        </tr>
-        <!--<tr v-show='response.length !== 0'>
+
+    <nav class="navbar navbar-light bg-light" style="justify-content: flex-start;" v-show='colChoices.length !== 0'>
+        <a data-toggle="tooltip"
+            title='Select the column to import segment IDs from. Each column is identified by its first row.'>
+            <img style='vertical-align:initial' src='info.png'>
+        </a>
+        <label style="margin-left: 5px;"> CSV Column: </label>
+        <button @click="importCol(c)" v-for="(col, c) in colChoices" class="btn btn-primary">{{col}}</button>
+    </nav>
+
+    <!--<tr v-show='response.length !== 0'>
                 <td align="right"><label for="query">Failed: </label></td>
                 <td align="left">
                     <textarea v-model="failed"></textarea>
                 </td>
             </tr>-->
-        <tr v-show='response.length !== 0'>
-            <td>
-                <label>Edits per user per neuron: </label>
-            </td>
-        </tr>
-        <tr v-show='response.length !== 0'>
-            <td>
-                <button @click="viewResults" :disabled="!response.length" class="btn btn-primary">View</button>
-                <button @click="exportCSV" :disabled="!response.length" class="btn btn-primary">Export CSV</button>
-            </td>
-            <!--<button @click="mergeCSV" :disabled="!response.length || !importedCSVFile.length"
-                                class="btn btn-primary">Merge
-                                CSV</button>-->
-        </tr>
-        <tr v-show='response.length !== 0'>
-            <td>
-                <label>Edits per user on all given neurons combined: </label>
-            </td>
-        </tr>
-        <tr v-show='response.length !== 0'>
-            <td>
-                <button @click="viewUsers" :disabled="!userList.length" class="btn btn-primary">View</button>
-                <button @click="exportUserCSV" :disabled="!userCSV.length" class="btn btn-primary">Export
-                    CSV</button>
-            </td>
-        </tr>
-    </table>
+
+    <nav class="navbar navbar-light bg-light" style="justify-content: flex-start;" v-show='response.length !== 0'>
+        <label>Edits per user per neuron: </label>
+    </nav>
+
+    <nav class="navbar navbar-light bg-light" style="justify-content: flex-start;" v-show='response.length !== 0'>
+        <button @click="viewResults" :disabled="!response.length" class="btn btn-primary">View</button>
+        <button @click="exportCSV" :disabled="!response.length" class="btn btn-primary">Export CSV</button>
+    </nav>
+
+    <nav class="navbar navbar-light bg-light" style="justify-content: flex-start;" v-show='response.length !== 0'>
+        <label>Edits per user on all given neurons combined: </label>
+    </nav>
+
+    <nav class="navbar navbar-light bg-light" style="justify-content: flex-start;" v-show='response.length !== 0'>
+        <button @click="viewUsers" :disabled="!userList.length" class="btn btn-primary">View</button>
+        <button @click="exportUserCSV" :disabled="!userCSV.length" class="btn btn-primary">Export CSV</button>
+    </nav>
 </span>
 <script src="query.js"></script>
 {% endblock %}
