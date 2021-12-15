@@ -211,7 +211,7 @@ def processToJson(query, dataframe, graph=None):
 
     return {
         "key": query,
-        "edits": json.loads(dataframe.to_json(orient="records", date_format="iso")),
+        "edits": json.loads(dataframe.astype({"before_root_ids": str, "after_root_ids": str}, errors='raise').to_json(orient="records", date_format="iso")),
         "lineage": len(published) > 0,
         "published": pubdict,
     }

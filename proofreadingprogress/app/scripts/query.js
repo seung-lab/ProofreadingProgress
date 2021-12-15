@@ -187,7 +187,8 @@ const app = new Vue({
             }
           });
           this.response = singleRow.edits;
-          // this.csv = response.csv.replace(/\[|\]/g, '');
+          // this.csv = this.csv.replace(/\[|\]/g, '');
+          if (this.csv[0] == ',') this.csv = this.csv.substring(1);
         } else {
           alert(`Root ID ${this.query.root_id} has no edits`);
         }
@@ -294,15 +295,10 @@ const app = new Vue({
       this.ex_csv = Papa.unparse(ex_csv);
     },
     exportCSV: function() {
-      const filename = 'edits.csv';
-      const blob = new Blob(
-          [this.excelcsv ? this.ex_csv : this.csv],
-          {type: 'text/csv;charset=utf-8;'});
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', filename);
-      link.click();
+      rawExport('edits.csv', this.excelcsv ? this.ex_csv : this.csv);
+    },
+    exportSingleCSV: function() {
+      rawExport('changelog.csv', this.csv);
     },
     viewResults: function() {
       let headers = this.headers;
@@ -339,13 +335,7 @@ const app = new Vue({
       });
     },
     exportUserCSV: function() {
-      const filename = 'useredits.csv';
-      const blob = new Blob([this.userCSV], {type: 'text/csv;charset=utf-8;'});
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', filename);
-      link.click();
+      rawExport('useredits.csv', this.userCSV);
     },
     viewUsers: function() {
       let headers = this.userHeaders;
@@ -387,3 +377,13 @@ const app = new Vue({
 $(function() {
   $('[data-toggle="tooltip"]').tooltip()
 })
+
+function rawExport(name, csv) {
+  const filename = name;
+  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.click();
+}

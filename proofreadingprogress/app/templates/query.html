@@ -31,20 +31,6 @@
             <label for="filtered"> Filter unrelated edits: </label>
             <input name="filtered" type="checkbox" v-model.boolean="query.filtered">
         </span>
-        <!--<span>
-                                    <label for="lineage"> Search
-                                        Predecessors: </label>
-                                    <input name="lineage" type="checkbox" v-model.boolean="query.lineage">
-                                </span>-->
-        <span style="margin-left: 80px;">
-            <a data-toggle="tooltip"
-                title='Export CSV in a format that will correctly display segment IDs in Excel (which would otherwise replace final digits with zeroes). Not recommended for programmatic analysis.'>
-                <img style='vertical-align:initial' src='info.png'>
-            </a>
-            <label for="excel"> Excel
-                Safe Export: </label>
-            <input name="excel" type="checkbox" v-model.boolean="excelcsv">
-        </span>
         <span style="margin-left: 80px;">
             <label for="dset"> Dataset: </label>
             <select name="dset" v-model="dataset">
@@ -54,6 +40,9 @@
                     Testing</option>
                 <option disabled value="">Sandbox</option>
             </select>
+        </span>
+        <span style="margin-left: 80px;">
+            <button @click="exportSingleCSV" :disabled="!response.length" class="btn btn-primary">Export CSV</button>
         </span>
     </nav>
 
