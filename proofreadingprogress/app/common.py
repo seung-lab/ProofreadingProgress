@@ -169,14 +169,12 @@ def dataRequest(r):
         try:
             jsonData = processToJson(str(key), value, graph)
             reqs.append(jsonData)
-            csv = value.to_csv()
         except:
             #todo
             pass
 
     return {
         "json": reqs,
-        "csv": csv if single else "",
     }
 
 def multiThread(client, queries, filter = True, graph = False, b_size = 10, p_size = 10):

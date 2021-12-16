@@ -161,9 +161,6 @@ const app = new Vue({
         const resArray =
             await Promise.all(responses.map(async r => await r.json()));
         const jsonArray = resArray.map(d => d.json).flat();
-        if (jsonArray.length == 1) {
-          this.csv = resArray[0].csv.replace(/\[|\]/g, '');
-        }
         console.log(
             `${requests.length} requests, ${jsonArray.length} responses`);
         await this.processData(jsonArray);
@@ -187,8 +184,9 @@ const app = new Vue({
             }
           });
           this.response = singleRow.edits;
-          // this.csv = this.csv.replace(/\[|\]/g, '');
-          if (this.csv[0] == ',') this.csv = this.csv.substring(1);
+          const csv =
+              [this.headers, ...this.response.map(e => Object.values(e))];
+          this.csv = Papa.unparse(csv);
         } else {
           alert(`Root ID ${this.query.root_id} has no edits`);
         }
