@@ -11,10 +11,7 @@
 <span id="app">
     <h6 v-show='error.length !== 0' style="margin: 14px; color: red;">Error: {{error}}</h6>
     <h6 v-show='warn.length !== 0' style="margin: 14px; color: orange;">Warning: {{warn}}</h6>
-    <h6 style="margin: 14px;">
-        <img style='vertical-align:initial' src='info.png'></a>&nbspSegment
-        ID:
-    </h6>
+    <h6 style="margin: 14px;">Segment ID: </h6>
     <nav class="navbar navbar-light bg-light" style="justify-content: flex-start;">
         <input type="number" v-model="query.root_id" name="query">
         <button class="btn btn-primary" type="button" @click="apiRequest" :disabled="!isReady">
@@ -38,7 +35,7 @@
                     Production</option>
                 <option value="fly_training_v2">
                     Testing</option>
-                <option disabled value="">Sandbox</option>
+                <option value="fly_v26">Sandbox</option>
             </select>
         </span>
         <span style="margin-left: 80px;">
