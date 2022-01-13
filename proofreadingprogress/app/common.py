@@ -139,6 +139,11 @@ def unhandled_exception(e):
 # -------------------
 # ------ Applications
 # -------------------
+serverAddresses = {
+    "fly_v31": "https://prod.flywire-daf.com",
+    "fly_v26": "https://prod.flywire-daf.com",
+    "fly_training_v2": "https://minnie.microns-daf.com",
+}
 def dataRequest(r):
     reqs = []
     graph = None
@@ -149,7 +154,7 @@ def dataRequest(r):
     isLineage = False#args.get("lineage", "false") == "true"
     dataset = args.get("dataset", "default")
     #use user token, instead of local token
-    client = chunkedgraph.ChunkedGraphClient(server_address="https://prod.flywire-daf.com", 
+    client = chunkedgraph.ChunkedGraphClient(server_address=serverAddresses[dataset], 
                                             table_name=dataset, 
                                             auth_client=auth.AuthClient(token=g.auth_token))
     #print(f"My current token is: {client.auth.token}")
