@@ -136,7 +136,7 @@ const app = new Vue({
       request.searchParams.set('lineage', this.query.lineage);
 
       const responses = [];
-      const rawRequests = this.str_multiquery.split(/[ ,]+/);
+      const rawRequests = this.str_multiquery.split(/[ ,\n]+/);
       const requests = Array.from(new Set(rawRequests));
       const dupCount = rawRequests.length - requests.length;
       this.warn = dupCount ? `${dupCount} duplicates removed.` : '';
