@@ -161,6 +161,9 @@ const app = new Vue({
         const resArray =
             await Promise.all(responses.map(async r => await r.json()));
         const jsonArray = resArray.map(d => d.json).flat();
+        // This is not the best way to do it
+        const errorArray = resArray.map(d => d.error).flat();
+        console.log(`The following ids could not be processed: ${errorArray}`);
         console.log(
             `${requests.length} requests, ${jsonArray.length} responses`);
         await this.processData(jsonArray);
@@ -343,6 +346,8 @@ const app = new Vue({
     },
     importCSV: function(e) {
       Papa.parse(e.target.files[0], {
+        // quoteChar: `'`,
+        // escapeChar: `\\`,
         skipEmptyLines: true,
         complete: (results) => {
           this.importedCSVName = e.target.files[0];
@@ -358,6 +363,7 @@ const app = new Vue({
       this.importedCSVFile.forEach((e, i) => {
         this.keyindex = index;
         let rid = e[index];
+        // let rid = e[e.length - 1];
         // Remove Leading ' on import
         if (rid[0] == '\'' && rid.length > 1) rid = rid.slice(1);
         // Remove invalid root_ids

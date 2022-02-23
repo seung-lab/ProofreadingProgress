@@ -170,20 +170,21 @@ def dataRequest(r):
         graphs = [g for g in batches]
         graph = nx.compose_all(graphs) if len(graphs) > 1 else graphs[0]
 
+    errors = []
     for key, value in dfdict.items():
         try:
             jsonData = processToJson(str(key), value, graph)
             reqs.append(jsonData)
         except:
-            #todo
-            pass
+            errors.extend(list(map(str, value)))
 
     return {
+        "error": errors,
         "json": reqs,
     }
 
 def multiThread(client, queries, filter = True, graph = False, b_size = 10, p_size = 10):
-    bqueries = [(client, queries[i : i + b_size], filter) for i in range(0, len(queries), b_size)]
+    bqueries = [(client, queries[i : i + b_size], filter, i) for i in range(0, len(queries), b_size)]
     p = Pool(p_size)
     results = p.imap(caveGRPH if graph else caveCHLG, bqueries)
     p.close()
@@ -191,10 +192,32 @@ def multiThread(client, queries, filter = True, graph = False, b_size = 10, p_si
     return results
 
 def caveCHLG(args):
-    return args[0].get_tabular_change_log(args[1], args[2])
+    try:
+        return args[0].get_tabular_change_log(args[1], args[2])
+    except:
+        results = {f'error_{args[3]}': []}
+        roots = args[1].copy()
+        for id in roots:
+            try:
+                results.update(args[0].get_tabular_change_log([id], args[2]))
+            except:
+                results[f'error_{args[3]}'].append(id)
+        return results
+            
+
 #return list of graphs
 def caveGRPH(args):
-    return args[0].get_lineage_graph(root_id=args[1], as_nx_graph=True)
+    try:
+        return args[0].get_lineage_graph(root_id=args[1], as_nx_graph=True)
+    except:
+        results = {f'error_{args[3]}': []}
+        roots = args[1].copy()
+        for id in roots:
+            try:
+                args[0].get_lineage_graph(root_id=[id], as_nx_graph=True)
+            except:
+                results[f'error_{args[3]}'].append(id)
+        return results
 
 def processToJson(query, dataframe, graph=None):
     pubdict = None
