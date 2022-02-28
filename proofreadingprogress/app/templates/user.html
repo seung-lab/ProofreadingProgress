@@ -10,6 +10,10 @@
 
 <span id="app">
     <h6 v-show='error.length !== 0' style="margin: 14px; color: red;">Error: {{error}}</h6>
+    <div v-show='failedIDs.length !== 0' class="navbar navbar-light bg-light">
+        <textarea disabled v-model="failedIDString"></textarea>
+    </div>
+
     <h6 v-show='warn.length !== 0' style="margin: 14px; color: orange;">Warning: {{warn}}</h6>
     <h6 style="margin: 14px;"><a data-toggle="tooltip"
             title="Enter list of Segment IDs to search, separated by commas, spaces or paragraph marks.">
@@ -21,6 +25,13 @@
             <span class="spinner-border spinner-border-sm" aria-hidden="true" v-show="loading"></span>
             {{ status }}
         </button>
+        <a style="margin-left: 20px;" data-toggle="tooltip" title='Valid CSVs have columns that are seperated by commas. Any extra commas will cause the imported data to be malformed.
+
+        Ex: "column 1, column 2" = GOOD, will be treated as 2 columns.
+
+        Ex: "column 1(x, y, z), column 2" = BAD, will be treated as 4 columns.'>
+            <img style='vertical-align:initial' src='info.png'>
+        </a>
         <button @click="chooseCSV" class="btn btn-primary">Import CSV</button>
         <input style="display: none" type="file" id="import" @change="importCSV">
     </nav>
@@ -61,14 +72,26 @@
 
     <span id="prefix" style="display: none;">%% prefix %%</span>
 
-    <nav class="navbar navbar-light bg-light" style="justify-content: flex-start;" v-show='colChoices.length !== 0'>
-        <a data-toggle="tooltip"
-            title='Select the column to import segment IDs from. Each column is identified by its first row.'>
-            <img style='vertical-align:initial' src='info.png'>
-        </a>
-        <label style="margin-left: 5px;"> CSV Column: </label>
-        <button @click="importCol(c)" v-for="(col, c) in colChoices" class="btn btn-primary">{{col}}</button>
-    </nav>
+    <div v-show='colChoices.length !== 0'>
+        <nav class="navbar navbar-light bg-light" style="justify-content: flex-start;">
+            <a data-toggle="tooltip"
+                title='Select the column to import segment IDs from. Each column is identified by its first row. Only numeric values will be imported.'>
+                <img style='vertical-align:initial' src='info.png'>
+            </a>
+            <label style="margin-left: 5px;"> CSV Column: </label>
+            <button @click="importCol(c)" v-for="(col, c) in colChoices" class="btn btn-primary">{{col}}</button>
+        </nav>
+        <nav class="navbar navbar-light bg-light" style="justify-content: flex-start;">
+            <a data-toggle="tooltip"
+                title='Import by Column Index. If index is out of bounds for a row, the row will be omitted. The first column is index 0. Only numeric values will be imported.'>
+                <img style='vertical-align:initial' src='info.png'>
+            </a>
+            <label style="margin-left: 5px;margin-right: 5px;"> Col Index: </label>
+            <input v-model="importOverride" style="width:25px"><button class="btn btn-primary" type="button"
+                @click="overrideImport">Import
+            </button>
+        </nav>
+    </div>
 
     <!--<tr v-show='response.length !== 0'>
                 <td align="right"><label for="query">Failed: </label></td>

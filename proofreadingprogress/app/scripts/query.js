@@ -77,7 +77,8 @@ const app = new Vue({
     // OUTPUT
     error: '',
     warn: '',
-    failed: 0,
+    failedIDs: [],
+    failedIDString: '',
     response: [],
     headers: [],
     csv: '',
@@ -90,6 +91,7 @@ const app = new Vue({
     keyindex: 0,
     importedCSVName: '',
     importedCSVFile: [],
+    importOverride: 0,
     idToRowMap: {},
     // ETC
     status: 'Submit',
@@ -144,6 +146,11 @@ const app = new Vue({
       let failed = 0;
       for (const reqSet of batches) {
         try {
+          // Reset to zero
+          this.failedIDs = [];
+          this.failedIDString = '';
+          this.error = ``;
+
           responses.push(await fetch(request, {
             method: 'POST',
             headers: {
@@ -153,26 +160,31 @@ const app = new Vue({
             body: JSON.stringify({queries: reqSet.join(',')}),
           }));
         } catch (e) {
-          failed++;
-          this.error = `${failed} requests failed.\n`;
+          this.failedIDs = [...this.failedIDs, ...reqSet];
+          this.failedIDString = this.failedIDs.join(', ');
+          this.error =
+              `Could not communicate with server, please retry the following IDs:\n`;
         }
       }
       try {
         const resArray =
             await Promise.all(responses.map(async r => await r.json()));
         const jsonArray = resArray.map(d => d.json).flat();
-        // This is not the best way to do it
-        const errorArray = resArray.map(d => d.error).flat();
-        console.log(`The following ids could not be processed: ${errorArray}`);
+        if (this.error == '') {
+          const errorArray = resArray.map(d => d.error).flat();
+          this.failedIDs = errorArray;
+          this.failedIDString = errorArray.join(', ');
+          this.error = `The following ids could not be processed.`;
+        }
         console.log(
             `${requests.length} requests, ${jsonArray.length} responses`);
         await this.processData(jsonArray);
         this.status = 'Submit';
         this.loading = false;
       } catch (e) {
-        alert(`Root ID: ${this.query.root_id} is invalid.`);
         this.loading = false;
         this.status = 'Submit';
+        this.warn = e;
         throw e;
       }
     },
@@ -191,7 +203,7 @@ const app = new Vue({
               [this.headers, ...this.response.map(e => Object.values(e))];
           this.csv = Papa.unparse(csv);
         } else {
-          alert(`Root ID ${this.query.root_id} has no edits`);
+          this.warn = `Root ID ${this.query.root_id} has no edits`;
         }
       } else if (this.str_multiquery.length) {
         this.queryProcess(rawData);
@@ -352,6 +364,17 @@ const app = new Vue({
         complete: (results) => {
           this.importedCSVName = e.target.files[0];
           this.importedCSVFile = results.data;
+
+          if (!results.data.length) {
+            this.warn = `${this.importedCSVName} is empty!`;
+          } else if (
+              results.data.length > 1 &&
+              results.data[0].length != results.data[1].length) {
+            this.warn =
+                `Header Row and Row 1 have different amount of columns! Unable to import columns correcly.
+            Please ensure that the imported CSV is valid. Every row must have the same amount of commas.`;
+          }
+
           this.colChoices = results.data[0];
         }
       });
@@ -360,20 +383,31 @@ const app = new Vue({
       document.getElementById('import').click();
     },
     importCol: function(index) {
+      const multiquery = [];
+      let badRows = 0;
       this.importedCSVFile.forEach((e, i) => {
-        this.keyindex = index;
-        let rid = e[index];
-        // let rid = e[e.length - 1];
-        // Remove Leading ' on import
-        if (rid[0] == '\'' && rid.length > 1) rid = rid.slice(1);
-        // Remove invalid root_ids
-        rid = importCSVCheck(rid);
-        if (rid) {
-          this.str_multiquery = this.str_multiquery.concat(
-              !this.str_multiquery.length ? '' : ', ', rid);
-          this.idToRowMap[rid] = i;
+        try {
+          this.keyindex = index;
+          let rid = e[index];
+          // Remove Leading ' on import
+          if (rid[0] == '\'' && rid.length > 1) rid = rid.slice(1);
+          // Remove invalid root_ids
+          rid = importCSVCheck(rid);
+          if (rid) {
+            this.idToRowMap[rid] = i;
+            multiquery.push(rid);
+          }
+        } catch {
+          badRows++;
+          this.warn =
+              `${badRows} rows could not be imported. Index out of bounds.`
         }
       });
+
+      this.str_multiquery = !multiquery.length ? '' : multiquery.join(', ');
+    },
+    overrideImport: function() {
+      this.importCol(Number(this.importOverride));
     }
   }
 });

@@ -48,11 +48,21 @@
     <script src="https://code.jquery.com/jquery-3.6.0.js"
         integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
     <nav class="navbar navbar-expand-lg navbar-light justify-content-between" style="background-color: #cecdca;">
-        <!--<a class="navbar-brand mb-0 h1" href="{{url_for('proofreadingmanagement_v1.home_page')}}">Home</a>
+        <!--<a class="navbar-brand mb-0 h1" href="{{url_for('proofreadingmanagement_v1.home_page')}}">Home</a>-->
+        <script>
+            function patchBootstrapToggle() {
+                // this is a monkey patch
+                let target = document.getElementById('navbarSupportedContent');
+                if (target) {
+                    target.classList.toggle('show');
+                }
+            }
+        </script>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"
+            onclick="patchBootstrapToggle()">
             <span class="navbar-toggler-icon"></span>
-        </button>-->
+        </button>
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav mr-auto">
