@@ -78,15 +78,15 @@
                 title='Select the column to import segment IDs from. Each column is identified by its first row. Only numeric values will be imported.'>
                 <img style='vertical-align:initial' src='info.png'>
             </a>
-            <label style="margin-left: 5px;"> CSV Column: </label>
+            <label style="margin-left: 5px;">Column Import: </label>
             <button @click="importCol(c)" v-for="(col, c) in colChoices" class="btn btn-primary">{{col}}</button>
         </nav>
         <nav class="navbar navbar-light bg-light" style="justify-content: flex-start;">
             <a data-toggle="tooltip"
-                title='Import by Column Index. If index is out of bounds for a row, the row will be omitted. The first column is index 0. Only numeric values will be imported.'>
+                title='Import by Column Number. The first column is #1. Only numeric values will be imported.'>
                 <img style='vertical-align:initial' src='info.png'>
             </a>
-            <label style="margin-left: 5px;margin-right: 5px;"> Col Index: </label>
+            <label style="margin-left: 5px;margin-right: 5px;"> Column #: </label>
             <input v-model="importOverride" style="width:25px"><button class="btn btn-primary" type="button"
                 @click="overrideImport">Import
             </button>

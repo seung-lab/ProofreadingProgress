@@ -371,7 +371,7 @@ const app = new Vue({
               results.data.length > 1 &&
               results.data[0].length != results.data[1].length) {
             this.warn =
-                `Header Row and Row 1 have different amount of columns! Unable to import columns correcly.
+                `Header Row and Row 1 have different amount of columns! Unable to import columns correctly.
             Please ensure that the imported CSV is valid. Every row must have the same amount of commas.`;
           }
 
