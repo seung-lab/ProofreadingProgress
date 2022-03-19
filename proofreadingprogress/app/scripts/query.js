@@ -170,8 +170,8 @@ const app = new Vue({
         const resArray =
             await Promise.all(responses.map(async r => await r.json()));
         const jsonArray = resArray.map(d => d.json).flat();
-        if (this.error == '') {
-          const errorArray = resArray.map(d => d.error).flat();
+        const errorArray = resArray.map(d => d.error).flat();
+        if (this.error == '' && errorArray.length) {
           this.failedIDs = errorArray;
           this.failedIDString = errorArray.join(', ');
           this.error = `The following ids could not be processed.`;
