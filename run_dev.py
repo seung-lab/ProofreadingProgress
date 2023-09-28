@@ -8,9 +8,9 @@ from proofreadingprogress.app import create_app
 
 app = create_app()
 
-os.environ["INFO_URL"] = "global.daf-apis.com/info"
-os.environ["AUTH_URL"] = "global.daf-apis.com/auth"
-os.environ["STICKY_AUTH_URL"] = "global.daf-apis.com/sticky_auth"
+os.environ["INFO_URL"] = "global.brain-wire-test.org/info"
+os.environ["AUTH_URL"] = "global.brain-wire-test.org/auth"
+os.environ["STICKY_AUTH_URL"] = "global.brain-wire-test.org/sticky_auth"
 
 if __name__ == "__main__":
     print(sys.argv)
