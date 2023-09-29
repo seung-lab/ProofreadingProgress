@@ -144,7 +144,7 @@ def unhandled_exception(e):
 # ------ Applications
 # -------------------
 serverAddresses = {
-   os.environ.get("PPROGRESS_DATASET"): os.environ.get("DNS_HOSTNAME")
+   os.environ.get("PPROGRESS_DATASET"): os.environ.get("PPROGRESS_SERVER_ADDRESS")
 }
 
 def dataRequest(r):

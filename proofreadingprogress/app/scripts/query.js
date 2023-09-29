@@ -139,7 +139,6 @@ const app = new Vue({
       // Disable button, activate spinner
       this.loading = true;
       this.status = "Loading...";
-      console.log(base);
       const request = new URL(`${base}/qry/`);
       if (!this.query.root_id.length) {
         // request.searchParams.set('queries', this.str_multiquery);
@@ -163,7 +162,6 @@ const app = new Vue({
           this.failedIDs = [];
           this.failedIDString = "";
           this.error = ``;
-          console.log(request);
           responses.push(
             await fetch(request, {
               method: "POST",
