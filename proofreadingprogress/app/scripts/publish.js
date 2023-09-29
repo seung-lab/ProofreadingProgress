@@ -4,19 +4,16 @@ const base = `${window.location.origin}/${
 const params = new URL(document.location).searchParams;
 const auto_rootid = params.get("rootid");
 const wparams = `location=no,toolbar=no,menubar=no,width=620,left=0,top=0`;
-// const fly_v31 =
-//     `https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/`;
-// const fly_training_v2 =
-//     `https://minnie.microns-daf.com/segmentation/api/v1/table/fly_training_v2/`;
-const h01_full0_v2 = `https://local.brain-wire-test.org/segmentation/1.0/h01_full0_v2/`;
-const test0_parents_v0 = `https://local.brain-wire-test.org/segmentation/1.0/test0_parents_v0/`;
+const pprogressDataset =
+  document.getElementById("pprogressDataset").innerText || "";
+const pprogressDatasetURL =
+  document.getElementById("pprogressDatasetURL").innerText || "";
 
 const app = new Vue({
   el: "#app",
   data: {
     // INPUT
-    // dataset: fly_v31,
-    dataset: h01_full0_v2,
+    dataset: pprogressDatasetURL,
     doi: "",
     pname: "",
     str_rootids: auto_rootid || "",
@@ -38,8 +35,7 @@ const app = new Vue({
       return this.str_rootids.length && this.validateAll() && !this.loading;
     },
     customDataset: function () {
-      // return [fly_v31, fly_training_v2].includes(this.dataset);
-      return [h01_full0_v2, test0_parents_v0].includes(this.dataset);
+      return [pprogressDataset].includes(this.dataset);
     },
     validRoots: function () {
       const valid = this.rootsIDTest();

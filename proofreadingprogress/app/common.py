@@ -22,7 +22,8 @@ import numpy as np
 
 __api_versions__ = [0]
 __url_prefix__ = os.environ.get("PPROGRESS_URL_PREFIX", "progress")
-
+pprogress_dataset = os.environ.get("PPROGRESS_DATASET")
+pprogressDatasetURL = os.environ.get("PPROGRESS_DATASET_URL")
 # auth_token_file = open(
 #     os.path.join(
 #         os.path.expanduser("~"), ".cloudvolume/secrets/chunkedgraph-secret.json"
@@ -44,11 +45,11 @@ def index():
 
 
 def query():
-    return render_template("query.html", prefix=__url_prefix__)
+    return render_template("query.html", prefix=__url_prefix__, pprogressDataset=pprogress_dataset)
 
 
 def user():
-    return render_template("user.html", prefix=__url_prefix__)
+    return render_template("user.html", prefix=__url_prefix__, pprogressDataset=pprogress_dataset)
 
 
 def base():
@@ -56,7 +57,7 @@ def base():
 
 
 def publish():
-    return render_template("publish.html", prefix=__url_prefix__)
+    return render_template("publish.html", prefix=__url_prefix__, pprogressDataset=pprogress_dataset, pprogressDatasetURL=pprogressDatasetURL)
 
 
 def table():
@@ -143,11 +144,8 @@ def unhandled_exception(e):
 # ------ Applications
 # -------------------
 serverAddresses = {
-    "h01_full0_v2": "https://local.brain-wire-test.org",
-    "test0_parents_v0": "https://local.brain-wire-test.org",
-    "fly_v26": "https://prod.flywire-daf.com"
+   os.environ.get("PPROGRESS_DATASET"): os.environ.get("DNS_HOSTNAME")
 }
-
 
 def dataRequest(r):
     reqs = []

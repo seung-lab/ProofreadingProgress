@@ -61,16 +61,14 @@
         <span style="margin-left: 80px;">
             <label for="dset"> Dataset: </label>
             <select name="dset" v-model="dataset">
-                <option value="h01_full0_v2">
-                    Full Dataset</option>
-                <option value="test0_parents_v0">
-                    Test Datasetg</option>
-                <option value="fly_v26">Flywire</option>
+                <option value=%% pprogressDataset %%>
+                    %% pprogressDataset %%</option>
             </select>
         </span>
     </nav>
 
     <span id="prefix" style="display: none;">%% prefix %%</span>
+    <span id="pprogressDataset" style="display: none;">%% pprogressDataset %%</span>
 
     <div v-show='colChoices.length !== 0'>
         <nav class="navbar navbar-light bg-light" style="justify-content: flex-start;">
