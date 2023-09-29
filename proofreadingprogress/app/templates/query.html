@@ -31,8 +31,9 @@
         <span style="margin-left: 80px;">
             <label for="dset"> Dataset: </label>
             <select name="dset" v-model="dataset">
-                <option value=%% pprogressDataset %%>
-                    %% pprogressDataset %%</option>
+                {% for name, url in serverAddresses.items() %}
+                    <option value=%% name %%>%% name %%</option>
+                {% endfor %}
             </select>
         </span>
         <span style="margin-left: 80px;">
@@ -41,7 +42,6 @@
     </nav>
 
     <span id="prefix" style="display: none;">%% prefix %%</span>
-    <span id="pprogressDataset" style="display: none;">%% pprogressDataset %%</span>
 
     <table class="table table-bordered" v-show="response.length" style="background: #EAE7DC;">
         <thead>
@@ -56,5 +56,8 @@
         </tbody>
     </table>
 </span>
+<script>
+    const default_dataset =  "%% serverAddresses.keys()|first %%"
+</script>
 <script src="query.js"></script>
 {% endblock %}

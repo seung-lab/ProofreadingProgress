@@ -6,8 +6,6 @@ const auto_rootid = params.get("rootid");
 const auto_submit = params.get("submit");
 const auto_dataset = params.get("dataset");
 const wparams = `location=no,toolbar=no,menubar=no,width=620,left=0,top=0`;
-const pprogressDataset =
-  document.getElementById("pprogressDataset").innerText || "";
 
 document
   .querySelectorAll("#info")
@@ -80,7 +78,7 @@ const app = new Vue({
     // INPUT
     query: {root_id: auto_rootid || "", filtered: true, lineage: true},
     excelcsv: false,
-    dataset: auto_dataset || pprogressDataset,
+    dataset: auto_dataset || default_dataset,
     str_multiquery: "",
     // OUTPUT
     error: "",

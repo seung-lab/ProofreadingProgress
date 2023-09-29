@@ -1,3 +1,2 @@
-export PPROGRESS_DATASET="h01_full0_v2"
-export PPROGRESS_DATASET_URL='https://local.brain-wire-test.org/segmentation/1.0/h01_full0_v2/'
-export PPROGRESS_SERVER_ADDRESS="https://localv3.brain-wire-test.org"
+export PPROGRESS_DATASETS='{"h01_full0_v2": "https://local.brain-wire-test.org/segmentation/1.0/h01_full0_v2/", "test0_parents_v0": "https://local.brain-wire-test.org/segmentation/1.0/test0_parents_v0/" }'
+export PPROGRESS_SERVER_ADDRESSES='{"h01_full0_v2": "https://local.brain-wire-test.org", "test0_parents_v0": "https://local.brain-wire-test.org" }'

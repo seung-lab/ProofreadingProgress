@@ -4,16 +4,12 @@ const base = `${window.location.origin}/${
 const params = new URL(document.location).searchParams;
 const auto_rootid = params.get("rootid");
 const wparams = `location=no,toolbar=no,menubar=no,width=620,left=0,top=0`;
-const pprogressDataset =
-  document.getElementById("pprogressDataset").innerText || "";
-const pprogressDatasetURL =
-  document.getElementById("pprogressDatasetURL").innerText || "";
 
 const app = new Vue({
   el: "#app",
   data: {
     // INPUT
-    dataset: pprogressDatasetURL,
+    dataset: default_dataset_url,
     doi: "",
     pname: "",
     str_rootids: auto_rootid || "",
@@ -35,7 +31,7 @@ const app = new Vue({
       return this.str_rootids.length && this.validateAll() && !this.loading;
     },
     customDataset: function () {
-      return [pprogressDataset].includes(this.dataset);
+      return [dataset_name_list].includes(this.dataset);
     },
     validRoots: function () {
       const valid = this.rootsIDTest();

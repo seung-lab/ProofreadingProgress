@@ -17,8 +17,6 @@
 
 <body>
     <span id="prefix" style="display: none;">%% prefix %%</span>
-    <span id="pprogressDataset" style="display: none;">%% pprogressDataset %%</span>
-    <span id="pprogressDatasetURL" style="display: none;">%% pprogressDatasetURL %%</span>
 
     <div id="app">
         <table>
@@ -29,7 +27,9 @@
                 </td>
                 <td align="left">
                     <select v-model="dataset">
-                        <option value=%% pprogressDatasetURL %%>%% pprogressDataset %%</option>
+                        {% for name, url in datasets.items() %}
+                            <option value=%% url %%>%% name %%</option>
+                        {% endfor %}
                     </select>
                 </td>
             </tr>
@@ -98,6 +98,10 @@
             </tbody>
         </table>
     </div>
+    <script>
+        const default_dataset_url = "%% datasets.values()|first %%"
+        const dataset_name_list = "%% datasets.keys() %%"
+    </script>
     <script src="publish.js"></script>
 </body>
 

@@ -22,8 +22,7 @@ import numpy as np
 
 __api_versions__ = [0]
 __url_prefix__ = os.environ.get("PPROGRESS_URL_PREFIX", "progress")
-pprogress_dataset = os.environ.get("PPROGRESS_DATASET")
-pprogressDatasetURL = os.environ.get("PPROGRESS_DATASET_URL")
+
 # auth_token_file = open(
 #     os.path.join(
 #         os.path.expanduser("~"), ".cloudvolume/secrets/chunkedgraph-secret.json"
@@ -45,11 +44,11 @@ def index():
 
 
 def query():
-    return render_template("query.html", prefix=__url_prefix__, pprogressDataset=pprogress_dataset)
+    return render_template("query.html", prefix=__url_prefix__, serverAddresses=serverAddresses)
 
 
 def user():
-    return render_template("user.html", prefix=__url_prefix__, pprogressDataset=pprogress_dataset)
+    return render_template("user.html", prefix=__url_prefix__, serverAddresses=serverAddresses)
 
 
 def base():
@@ -57,7 +56,7 @@ def base():
 
 
 def publish():
-    return render_template("publish.html", prefix=__url_prefix__, pprogressDataset=pprogress_dataset, pprogressDatasetURL=pprogressDatasetURL)
+    return render_template("publish.html", prefix=__url_prefix__, datasets=datasets)
 
 
 def table():
@@ -143,9 +142,10 @@ def unhandled_exception(e):
 # -------------------
 # ------ Applications
 # -------------------
-serverAddresses = {
-   os.environ.get("PPROGRESS_DATASET"): os.environ.get("PPROGRESS_SERVER_ADDRESS")
-}
+datasets = json.loads(os.environ.get("PPROGRESS_DATASETS"))
+serverAddresses = json.loads(os.environ.get("PPROGRESS_SERVER_ADDRESSES"))
+
+print(datasets, serverAddresses)
 
 def dataRequest(r):
     reqs = []

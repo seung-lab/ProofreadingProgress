@@ -61,14 +61,14 @@
         <span style="margin-left: 80px;">
             <label for="dset"> Dataset: </label>
             <select name="dset" v-model="dataset">
-                <option value=%% pprogressDataset %%>
-                    %% pprogressDataset %%</option>
+                {% for name, url in serverAddresses.items() %}
+                    <option value=%% name %%>%% name %%</option>
+                {% endfor %}
             </select>
         </span>
     </nav>
 
     <span id="prefix" style="display: none;">%% prefix %%</span>
-    <span id="pprogressDataset" style="display: none;">%% pprogressDataset %%</span>
 
     <div v-show='colChoices.length !== 0'>
         <nav class="navbar navbar-light bg-light" style="justify-content: flex-start;">
@@ -116,5 +116,8 @@
         <button @click="exportUserCSV" :disabled="!userCSV.length" class="btn btn-primary">Export CSV</button>
     </nav>
 </span>
+<script>
+    const default_dataset =  "%% serverAddresses.keys()|first %%"
+</script>
 <script src="query.js"></script>
 {% endblock %}
