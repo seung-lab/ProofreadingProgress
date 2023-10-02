@@ -61,11 +61,9 @@
         <span style="margin-left: 80px;">
             <label for="dset"> Dataset: </label>
             <select name="dset" v-model="dataset">
-                <option value="fly_v31">
-                    Production</option>
-                <option value="fly_training_v2">
-                    Testing</option>
-                <option value="fly_v26">Sandbox</option>
+                {% for name, url in serverAddresses.items() %}
+                    <option value=%% name %%>%% name %%</option>
+                {% endfor %}
             </select>
         </span>
     </nav>
@@ -118,5 +116,8 @@
         <button @click="exportUserCSV" :disabled="!userCSV.length" class="btn btn-primary">Export CSV</button>
     </nav>
 </span>
+<script>
+    const default_dataset =  "%% serverAddresses.keys()|first %%"
+</script>
 <script src="query.js"></script>
 {% endblock %}

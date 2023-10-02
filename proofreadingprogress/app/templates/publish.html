@@ -15,7 +15,9 @@
         crossorigin="anonymous"></script>
 </head>
 
-<body><span id="prefix" style="display: none;">%% prefix %%</span>
+<body>
+    <span id="prefix" style="display: none;">%% prefix %%</span>
+
     <div id="app">
         <table>
             <tr>
@@ -25,12 +27,9 @@
                 </td>
                 <td align="left">
                     <select v-model="dataset">
-                        <option value="https://prodv1.flywire-daf.com/segmentation/api/v1/table/fly_v31/">
-                            Production</option>
-                        <option value="https://minnie.microns-daf.com/segmentation/api/v1/table/fly_training_v2/">
-                            Testing</option>
-                        <option disabled value="">Sandbox</option>
-                        <!--<option value="">Custom</option>-->
+                        {% for name, url in datasets.items() %}
+                            <option value=%% url %%>%% name %%</option>
+                        {% endfor %}
                     </select>
                 </td>
             </tr>
@@ -99,6 +98,10 @@
             </tbody>
         </table>
     </div>
+    <script>
+        const default_dataset_url = "%% datasets.values()|first %%"
+        const dataset_name_list = "%% datasets.keys() %%"
+    </script>
     <script src="publish.js"></script>
 </body>
 
